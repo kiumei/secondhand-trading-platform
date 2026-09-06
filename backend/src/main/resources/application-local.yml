@@ -1,0 +1,6 @@
+# 仅用于无数据库的基础工程开发；不模拟业务数据或数据库连接成功。
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration
