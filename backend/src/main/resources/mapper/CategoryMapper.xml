@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.secondhand.category.CategoryMapper">
+  <resultMap id="category" type="com.campus.secondhand.category.CategoryMapper$Category">
+    <constructor>
+      <idArg column="category_id" javaType="java.lang.String"/>
+      <arg column="cate_name" javaType="java.lang.String"/>
+      <arg column="cate_desc" javaType="java.lang.String"/>
+    </constructor>
+  </resultMap>
+  <select id="findAll" resultMap="category">
+    SELECT category_id, cate_name, cate_desc FROM category ORDER BY category_id
+  </select>
+</mapper>

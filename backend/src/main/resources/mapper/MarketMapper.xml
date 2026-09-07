@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.secondhand.market.MarketMapper">
+  <resultMap id="goods" type="com.campus.secondhand.market.MarketModels$Goods">
+    <constructor>
+      <arg column="goods_id" javaType="java.lang.String"/>
+      <arg column="publish_user_id" javaType="java.lang.String"/>
+      <arg column="category_id" javaType="java.lang.String"/>
+      <arg column="title" javaType="java.lang.String"/>
+      <arg column="sell_price" javaType="java.math.BigDecimal"/>
+      <arg column="original_price" javaType="java.math.BigDecimal"/>
+      <arg column="trade_type" javaType="_int"/>
+      <arg column="goods_desc" javaType="java.lang.String"/>
+      <arg column="quality_level" javaType="java.lang.Integer"/>
+      <arg column="reject_reason" javaType="java.lang.String"/>
+      <arg column="publish_time" javaType="java.time.LocalDateTime"/>
+      <arg column="goods_status" javaType="_int"/>
+      <arg column="seller_name" javaType="java.lang.String"/>
+      <arg column="cate_name" javaType="java.lang.String"/>
+      <arg column="purchasable" javaType="_boolean"/>
+    </constructor>
+  </resultMap>
+  <resultMap id="order" type="com.campus.secondhand.market.MarketModels$Order">
+    <constructor>
+      <arg column="order_id" javaType="java.lang.String"/>
+      <arg column="buyer_id" javaType="java.lang.String"/>
+      <arg column="seller_id" javaType="java.lang.String"/>
+      <arg column="goods_id" javaType="java.lang.String"/>
+      <arg column="order_price" javaType="java.math.BigDecimal"/>
+      <arg column="order_status" javaType="_int"/>
+      <arg column="create_time" javaType="java.time.LocalDateTime"/>
+    </constructor>
+  </resultMap>
+  <resultMap id="evaluation" type="com.campus.secondhand.market.MarketModels$Evaluation">
+    <constructor>
+      <arg column="evaluate_id" javaType="java.lang.String"/>
+      <arg column="order_id" javaType="java.lang.String"/>
+      <arg column="goods_id" javaType="java.lang.String"/>
+      <arg column="evaluate_user_id" javaType="java.lang.String"/>
+      <arg column="score" javaType="_int"/>
+      <arg column="evaluate_content" javaType="java.lang.String"/>
+      <arg column="evaluate_time" javaType="java.time.LocalDateTime"/>
+    </constructor>
+  </resultMap>
+  <resultMap id="message" type="com.campus.secondhand.market.MarketModels$Message">
+    <constructor>
+      <arg column="msg_id" javaType="java.lang.String"/>
+      <arg column="send_user_id" javaType="java.lang.String"/>
+      <arg column="receive_user_id" javaType="java.lang.String"/>
+      <arg column="content" javaType="java.lang.String"/>
+      <arg column="is_read" javaType="_int"/>
+      <arg column="send_time" javaType="java.time.LocalDateTime"/>
+    </constructor>
+  </resultMap>
+  <resultMap id="report" type="com.campus.secondhand.market.MarketModels$Report">
+    <constructor>
+      <arg column="report_id" javaType="java.lang.String"/>
+      <arg column="report_user_id" javaType="java.lang.String"/>
+      <arg column="goods_id" javaType="java.lang.String"/>
+      <arg column="report_type" javaType="java.lang.String"/>
+      <arg column="report_content" javaType="java.lang.String"/>
+      <arg column="proof_img" javaType="java.lang.String"/>
+      <arg column="handle_status" javaType="_int"/>
+      <arg column="handle_result" javaType="java.lang.String"/>
+    </constructor>
+  </resultMap>
+  <resultMap id="category" type="com.campus.secondhand.category.CategoryMapper$Category">
+    <constructor>
+      <arg column="category_id" javaType="java.lang.String"/>
+      <arg column="cate_name" javaType="java.lang.String"/>
+      <arg column="cate_desc" javaType="java.lang.String"/>
+    </constructor>
+  </resultMap>
+
+  <!-- 分类管理；删除由外键兜底防止并发新增商品造成孤立引用。 -->
+  <select id="category" resultMap="category">SELECT category_id,cate_name,cate_desc FROM category WHERE category_id=#{id}</select>
+  <insert id="insertCategory">INSERT INTO category(category_id,cate_name,cate_desc) VALUES(#{id},#{body.cateName},#{body.cateDesc})</insert>
+  <update id="updateCategory">UPDATE category SET cate_name=#{body.cateName},cate_desc=#{body.cateDesc} WHERE category_id=#{id}</update>
+  <delete id="deleteCategory">DELETE FROM category WHERE category_id=#{id}</delete>
+  <select id="categoryGoods" resultType="long">SELECT COUNT(*) FROM goods WHERE cate_id=#{id}</select>
+
+  <sql id="goodsColumns">
+    g.goods_id,g.publish_user_id,g.cate_id AS category_id,g.title,g.sell_price,g.original_price,
+    g.trade_type,g.goods_desc,g.quality_level,g.reject_reason,g.publish_time,g.goods_status
+  </sql>
+  <sql id="goodsDetail">
+    SELECT <include refid="goodsColumns"/>,u.user_name AS seller_name,c.cate_name,
+      (g.goods_status=0 AND NOT EXISTS(
+        SELECT 1 FROM orders o WHERE o.goods_id=g.goods_id AND o.order_status IN(0,1,2,3,5)
+      )) AS purchasable
+    FROM goods g JOIN sys_user u ON u.user_id=g.publish_user_id JOIN category c ON c.category_id=g.cate_id
+  </sql>
+  <select id="goods" resultMap="goods"><include refid="goodsDetail"/> WHERE g.goods_id=#{id}</select>
+  <!-- 只锁商品自身，不通过 JOIN 额外锁定分类或卖家。锁后查订单使用当前读。 -->
+  <select id="lockGoods" resultMap="goods">
+    SELECT <include refid="goodsColumns"/>,NULL AS seller_name,NULL AS cate_name,FALSE AS purchasable
+    FROM goods g WHERE g.goods_id=#{id} FOR UPDATE
+  </select>
+  <sql id="goodsWhere">
+    <where>
+      <if test="status != null">AND g.goods_status=#{status}</if>
+      <if test="ownerId != null">AND g.publish_user_id=#{ownerId}</if>
+      <if test="keyword != null and keyword != ''">AND g.title LIKE CONCAT('%',#{keyword},'%')</if>
+      <if test="categoryId != null and categoryId != ''">AND g.cate_id=#{categoryId}</if>
+      <if test="minPrice != null">AND g.sell_price &gt;= #{minPrice}</if>
+      <if test="maxPrice != null">AND g.sell_price &lt;= #{maxPrice}</if>
+    </where>
+  </sql>
+  <select id="goodsList" resultMap="goods"><include refid="goodsDetail"/><include refid="goodsWhere"/>
+    ORDER BY g.publish_time DESC,g.goods_id DESC LIMIT #{pageSize} OFFSET #{offset}
+  </select>
+  <select id="goodsCount" resultType="long">SELECT COUNT(*) FROM goods g <include refid="goodsWhere"/></select>
+  <insert id="insertGoods">
+    INSERT INTO goods(goods_id,publish_user_id,cate_id,title,sell_price,original_price,trade_type,goods_desc,quality_level,publish_time,goods_status)
+    VALUES(#{id},#{owner},#{body.categoryId},#{body.title},#{body.sellPrice},#{body.originalPrice},
+      #{body.tradeType},#{body.goodsDesc},#{body.qualityLevel},CURRENT_TIMESTAMP,3)
+  </insert>
+  <update id="updateGoods">
+    UPDATE goods SET cate_id=#{body.categoryId},title=#{body.title},sell_price=#{body.sellPrice},
+      original_price=#{body.originalPrice},trade_type=#{body.tradeType},goods_desc=#{body.goodsDesc},
+      quality_level=#{body.qualityLevel},goods_status=3,reject_reason=NULL WHERE goods_id=#{id}
+  </update>
+  <update id="goodsStatus">
+    UPDATE goods SET goods_status=#{status},reject_reason=#{reason} WHERE goods_id=#{id} AND goods_status=#{oldStatus}
+  </update>
+
+  <!-- 订单字段采用 Word，状态编码采用已确认的 PDM；不自行增加支付/完成时间字段。 -->
+  <sql id="orderColumns">order_id,buyer_id,seller_id,goods_id,order_price,order_status,create_time</sql>
+  <select id="activeOrders" resultMap="order">
+    SELECT <include refid="orderColumns"/> FROM orders WHERE goods_id=#{goodsId} AND order_status IN(0,1,2,3,5) FOR UPDATE
+  </select>
+  <insert id="insertOrder">
+    INSERT INTO orders(order_id,buyer_id,seller_id,goods_id,order_price,order_status,create_time)
+    VALUES(#{orderId},#{buyerId},#{sellerId},#{goodsId},#{orderPrice},#{orderStatus},#{createTime})
+  </insert>
+  <select id="order" resultMap="order">SELECT <include refid="orderColumns"/> FROM orders WHERE order_id=#{id}</select>
+  <select id="lockOrder" resultMap="order">SELECT <include refid="orderColumns"/> FROM orders WHERE order_id=#{id} FOR UPDATE</select>
+  <sql id="orderWhere">
+    WHERE <choose><when test="side == 'buy'">buyer_id=#{userId}</when><otherwise>seller_id=#{userId}</otherwise></choose>
+  </sql>
+  <select id="orders" resultMap="order">SELECT <include refid="orderColumns"/> FROM orders <include refid="orderWhere"/>
+    ORDER BY create_time DESC,order_id DESC LIMIT #{size} OFFSET #{offset}
+  </select>
+  <select id="orderCount" resultType="long">SELECT COUNT(*) FROM orders <include refid="orderWhere"/></select>
+  <update id="orderStatus">UPDATE orders SET order_status=#{status} WHERE order_id=#{id} AND order_status=#{oldStatus}</update>
+
+  <!-- 在商品、订单锁之后读取评价，避免旧事务快照漏掉刚提交的评价。 -->
+  <select id="evaluationIds" resultType="string">SELECT evaluate_id FROM evaluate WHERE order_id=#{id} FOR UPDATE</select>
+  <insert id="insertEvaluation">
+    INSERT INTO evaluate(evaluate_id,order_id,goods_id,evaluate_user_id,score,evaluate_content,evaluate_time)
+    VALUES(#{evaluateId},#{orderId},#{goodsId},#{evaluateUserId},#{score},#{evaluateContent},#{evaluateTime})
+  </insert>
+  <select id="evaluations" resultMap="evaluation">
+    SELECT evaluate_id,order_id,goods_id,evaluate_user_id,score,evaluate_content,evaluate_time FROM evaluate
+    WHERE goods_id=#{id} ORDER BY evaluate_time DESC,evaluate_id DESC LIMIT #{size} OFFSET #{offset}
+  </select>
+  <select id="evaluationCount" resultType="long">SELECT COUNT(*) FROM evaluate WHERE goods_id=#{id}</select>
+  <select id="userEvaluations" resultMap="evaluation">
+    SELECT evaluate_id,order_id,goods_id,evaluate_user_id,score,evaluate_content,evaluate_time FROM evaluate
+    WHERE evaluate_user_id=#{userId} ORDER BY evaluate_time DESC,evaluate_id DESC LIMIT #{size} OFFSET #{offset}
+  </select>
+  <select id="userEvaluationCount" resultType="long">
+    SELECT COUNT(*) FROM evaluate WHERE evaluate_user_id=#{userId}
+  </select>
+
+  <sql id="messageColumns">msg_id,send_user_id,receive_user_id,content,is_read,send_time</sql>
+  <insert id="insertMessage">
+    INSERT INTO message(msg_id,send_user_id,receive_user_id,content,is_read,send_time)
+    VALUES(#{msgId},#{sendUserId},#{receiveUserId},#{content},#{isRead},#{sendTime})
+  </insert>
+  <select id="message" resultMap="message">SELECT <include refid="messageColumns"/> FROM message WHERE msg_id=#{id}</select>
+  <update id="readMessage">UPDATE message SET is_read=1 WHERE msg_id=#{id} AND receive_user_id=#{userId} AND is_read=0</update>
+  <sql id="messageWhere">
+    WHERE (send_user_id=#{userId} AND receive_user_id=#{peerId}) OR (send_user_id=#{peerId} AND receive_user_id=#{userId})
+  </sql>
+  <select id="messages" resultMap="message">SELECT <include refid="messageColumns"/> FROM message <include refid="messageWhere"/>
+    ORDER BY send_time DESC,msg_id DESC LIMIT #{size} OFFSET #{offset}
+  </select>
+  <select id="messageCount" resultType="long">SELECT COUNT(*) FROM message <include refid="messageWhere"/></select>
+
+  <sql id="reportColumns">report_id,report_user_id,goods_id,report_type,report_content,proof_img,handle_status,handle_result</sql>
+  <insert id="insertReport">
+    INSERT INTO report(report_id,report_user_id,goods_id,report_type,report_content,proof_img,handle_status,handle_result)
+    VALUES(#{reportId},#{reportUserId},#{goodsId},#{reportType},#{reportContent},#{proofImg},#{handleStatus},#{handleResult})
+  </insert>
+  <select id="report" resultMap="report">SELECT <include refid="reportColumns"/> FROM report WHERE report_id=#{id}</select>
+  <update id="handleReport">UPDATE report SET handle_status=1,handle_result=#{result} WHERE report_id=#{id} AND handle_status=0</update>
+  <sql id="reportWhere">
+    <where><if test="userId != null">AND report_user_id=#{userId}</if><if test="status != null">AND handle_status=#{status}</if></where>
+  </sql>
+  <select id="reports" resultMap="report">SELECT <include refid="reportColumns"/> FROM report <include refid="reportWhere"/>
+    ORDER BY report_id DESC LIMIT #{size} OFFSET #{offset}
+  </select>
+  <select id="reportCount" resultType="long">SELECT COUNT(*) FROM report <include refid="reportWhere"/></select>
+</mapper>

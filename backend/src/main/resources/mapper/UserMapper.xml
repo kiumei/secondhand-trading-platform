@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.campus.secondhand.user.UserMapper">
+  <resultMap id="user" type="com.campus.secondhand.user.UserRow">
+    <constructor>
+      <idArg column="user_id" javaType="java.lang.String"/>
+      <arg column="user_name" javaType="java.lang.String"/>
+      <arg column="password" javaType="java.lang.String"/>
+      <arg column="phone" javaType="java.lang.String"/>
+      <arg column="avatar" javaType="java.lang.String"/>
+      <arg column="intro" javaType="java.lang.String"/>
+      <arg column="user_role" javaType="_int"/>
+      <arg column="register_time" javaType="java.time.LocalDateTime"/>
+    </constructor>
+  </resultMap>
+  <sql id="columns">user_id, user_name, password, phone, avatar, intro, user_role, register_time</sql>
+  <select id="findByPhone" resultMap="user">
+    SELECT <include refid="columns"/> FROM sys_user WHERE phone = #{phone}
+  </select>
+  <select id="findById" resultMap="user">
+    SELECT <include refid="columns"/> FROM sys_user WHERE user_id = #{userId}
+  </select>
+  <insert id="insert">
+    INSERT INTO sys_user (user_id, user_name, password, phone, avatar, intro, user_role, register_time)
+    VALUES (#{userId}, #{userName}, #{password}, #{phone}, #{avatar}, #{intro}, #{userRole}, #{registerTime})
+  </insert>
+  <update id="updateProfile">
+    UPDATE sys_user
+    <set>
+      <if test="userName != null">user_name = #{userName},</if>
+      <if test="avatar != null">avatar = #{avatar},</if>
+      <if test="intro != null">intro = #{intro},</if>
+    </set>
+    WHERE user_id = #{userId}
+  </update>
+</mapper>
