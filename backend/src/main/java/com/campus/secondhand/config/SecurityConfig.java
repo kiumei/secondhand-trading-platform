@@ -22,10 +22,10 @@ public class SecurityConfig {
     @Bean
     PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 
-    /** 尚未接入账号表，不创建默认用户，也不允许占位账号登录。 */
+    /** 禁用框架默认账号；JSON 登录由 AccountService 查询账号并验证密码。 */
     @Bean
     UserDetailsService userDetailsService() {
-        return username -> { throw new UsernameNotFoundException("账号模块尚未接入"); };
+        return username -> { throw new UsernameNotFoundException("不支持默认账号认证"); };
     }
 
     @Bean
@@ -33,12 +33,25 @@ public class SecurityConfig {
         return http
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .logout(AbstractHttpConfigurer::disable)
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(200);
+                            response.setContentType("application/json;charset=UTF-8");
+                            mapper.writeValue(response.getOutputStream(), ApiResponse.success(null));
+                        }))
                 .requestCache(AbstractHttpConfigurer::disable)
                 .csrf(csrf -> csrf.csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/health", "/api/auth/csrf").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/goods", "/api/goods/*", "/api/goods/*/evaluations").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((request, response, ex) ->
