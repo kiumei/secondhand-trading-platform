@@ -34,7 +34,7 @@
 3. **自定义业务约束**
     - 用户角色：`0=普通学生`，`1=管理员`
     - 商品状态：`0未售出，1已售出，2下架，3待审核，4驳回`
-    - 订单状态：`0未支付，1已支付`
+    - 订单状态：`0待付款，1代发货，2待收货，3完成，4取消，5售后`
     - 评价评分：取值范围`1~5`整数
 
 ## 模型说明
@@ -66,8 +66,12 @@
 ```
 ├── docs/
 │   ├──校园二手交易平台系统设计.docx   #完整设计文档
-│   ├──dfd/                             #数据流图
-│   ├──er/                              #E‑R图、物理模型图
+│   ├──secondHandTrasaction_sws/
+|                           |——secondHandTrasaction.sws                             #PD图形总项目
+│                           |——ConceptualDataModel_SecondHandTransactionCDM.cdm     #CDM概念模型
+|                           |——ConceptualDataModel_SecondHandTransaction.pdm        #PDM物理模型
+|                           |——ConceptualDataModel_SecondHandTransaction.bpm        #数据流图(包含顶层和0层)
+|
 ├── sql/
 │   ├──secondhandtrasaction.sql                 #建表SQL初始化脚本
 └── README.md                           #项目说明文档
@@ -75,8 +79,8 @@
 
 ## 使用说明
 1. 本地安装MySQL8.0，创建数据库；
-2. 执行`secondhandtrasaction.sql `脚本完成全部数据表创建；
-3. 执行初始化脚本导入分类等基础数据；
+2. 执行`secondhandtrasaction.sql `脚本完成全部数据表创建,需要检查编码问题，在不同的软件上可能会出现中文乱码问题；
+3. 执行初始化脚本导入分类等基础数据，需要做初步测试，保证数据库数据表逻辑无误；
 4. 上层业务应用对接数据库，实现业务功能。
 5. 对于sws文件，需要使用PowerDesigner查看对应的数据流图和模型，其中sql通过PDM导出。
 ## 补充说明
