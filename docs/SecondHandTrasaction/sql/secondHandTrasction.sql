@@ -1,6 +1,6 @@
 /*==============================================================*/
 /* DBMS name:      MySQL 5.0                                    */
-/* Created on:     2026/9/6 13:14:54                            */
+/* Created on:     2026/9/7 15:31:49                            */
 /*==============================================================*/
 
 
@@ -23,50 +23,53 @@ drop table if exists report;
 /*==============================================================*/
 create table User
 (
-   user_id              int not null comment '×ÔÔöÖ÷¼ü',
+   user_id              int not null comment 'è‡ªå¢ä¸»é”®',
    user_name            varchar(20) not null,
    phone                char(11) not null,
-   password             varchar(64) not null comment '¼ÓÃÜ´æ´¢
+   password             varchar(64) not null comment 'åŠ å¯†å­˜å‚¨
             ',
    avatar               varchar(255),
    intro                varchar(200),
-   role                 smallint not null comment '0±íÊ¾ÆÕÍ¨ÓÃ»§
-            1±íÊ¾¹ÜÀíÔ±
+   role                 smallint not null comment '0è¡¨ç¤ºæ™®é€šç”¨æˆ·
+            1è¡¨ç¤ºç®¡ç†å‘˜
             ',
-   status               smallint not null comment '0ÆÕÍ¨ÓÃ»§
-            1¹ÜÀíÔ±
+   status               smallint not null comment '0æ™®é€šç”¨æˆ·
+            1ç®¡ç†å‘˜
             ',
    register_time        datetime,
    primary key (user_id)
 );
 
-alter table User comment 'ÓÃ»§ÓÃÓÚ¶şÊÖ½»Ò×£¬¿ÉÒÔÊÇÂô¼ÒÒ²¿ÉÒÔÊÇÂò¼Ò';
+alter table User comment 'ç”¨æˆ·ç”¨äºäºŒæ‰‹äº¤æ˜“ï¼Œå¯ä»¥æ˜¯å–å®¶ä¹Ÿå¯ä»¥æ˜¯ä¹°å®¶';
 
 /*==============================================================*/
 /* Table: category                                              */
 /*==============================================================*/
 create table category
 (
-   cate_id              int not null comment '×ÔÔöÖ÷¼ü',
-   goods_id             int not null,
+   cate_id              int not null comment 'è‡ªå¢ä¸»é”®',
    cate_name            varchar(50) not null,
-   parent_id            int comment '¸¸ÀàÎª0±íÊ¾Ò»¼¶·ÖÀà',
+   parent_id            int comment 'çˆ¶ç±»ä¸º0è¡¨ç¤ºä¸€çº§åˆ†ç±»',
    sort                 int,
    primary key (cate_id)
 );
+
+alter table category comment 'å•†å“åˆ†ç±»';
 
 /*==============================================================*/
 /* Table: evaluate                                              */
 /*==============================================================*/
 create table evaluate
 (
-   eva_id               int not null comment '×ÔÔö',
-   order_id             varchar(32) not null comment 'ÊÖ¹¤Éú³ÉÁ÷Ë®ºÅ²»×ÔÔö',
-   score                smallint not null comment '1-5ĞÇ',
-   content              varchar(500),
+   eva_id               int not null comment 'è‡ªå¢',
+   order_id             varchar(32) not null comment 'æ‰‹å·¥ç”Ÿæˆæµæ°´å·ä¸è‡ªå¢',
+   score                smallint not null comment '1-5æ˜Ÿ',
+   evaluate_content     varchar(500),
    eva_time             datetime not null,
    primary key (eva_id)
 );
+
+alter table evaluate comment 'è¯„ä»·';
 
 /*==============================================================*/
 /* Table: goods                                                 */
@@ -74,24 +77,23 @@ create table evaluate
 create table goods
 (
    goods_id             int not null,
-   user_id              int not null comment '×ÔÔöÖ÷¼ü',
+   user_id              int not null comment 'è‡ªå¢ä¸»é”®',
+   cate_id              int not null comment 'è‡ªå¢ä¸»é”®',
    title                varchar(100) not null,
-   sell_price           decimal not null,
-   original_price       decimal,
-   trade_method         smallint not null comment '1ÓÊ¼Ä
-            2×ÔÌá
-            3Á½Õß',
-   description          text not null comment 'ÎÄ±¾ÃèÊö',
-   quality              smallint comment '1-5±íÊ¾ĞÂ¾É³Ì¶È',
+   sell_price           decimal(10,2) not null,
+   original_price       decimal(10,2),
+   trade_method         smallint not null comment '1é‚®å¯„
+            2è‡ªæ
+            3ä¸¤è€…',
+   description          text not null comment 'æ–‡æœ¬æè¿°',
+   quality              smallint comment '1-5è¡¨ç¤ºæ–°æ—§ç¨‹åº¦',
    reject_reason        varchar(200),
    publish_time         datetime,
-   goods_satus          smallint not null comment '0´ıÉóºË
-            1ÉÏ¼Ü
-            2ÏÂ¼Ü
-            3³öÊÛ
-            4²µ»Ø',
+   goods_satus          smallint not null comment '0æœªå”®å‡ºï¼Œ1å·²å”®å‡ºï¼Œ2ä¸‹æ¶ï¼Œ3å¾…å®¡æ ¸ï¼Œ4é©³å›',
    primary key (goods_id)
 );
+
+alter table goods comment 'å•†å“';
 
 /*==============================================================*/
 /* Table: message                                               */
@@ -99,62 +101,69 @@ create table goods
 create table message
 (
    msg_id               int not null,
-   user_id              int not null comment '×ÔÔöÖ÷¼ü',
-   Use_user_id          int not null comment '×ÔÔöÖ÷¼ü',
-   content              varchar(500) not null,
-   is_read              smallint not null comment '0Î´¶Á
-            1ÒÑ¶Á',
-   send_time            decimal not null,
+   user_id              int not null comment 'è‡ªå¢ä¸»é”®',
+   Use_user_id          int not null comment 'è‡ªå¢ä¸»é”®',
+   messge_content       varchar(500) not null,
+   is_read              smallint not null comment '0æœªè¯»
+            1å·²è¯»',
+   sendtime             datetime not null,
    primary key (msg_id)
 );
+
+alter table message comment 'ç§ä¿¡';
 
 /*==============================================================*/
 /* Table: "order"                                               */
 /*==============================================================*/
 create table "order"
 (
-   order_id             varchar(32) not null comment 'ÊÖ¹¤Éú³ÉÁ÷Ë®ºÅ²»×ÔÔö',
-   user_id              int not null comment '×ÔÔöÖ÷¼ü',
-   eva_id               int comment '×ÔÔö',
+   order_id             varchar(32) not null comment 'æ‰‹å·¥ç”Ÿæˆæµæ°´å·ä¸è‡ªå¢',
+   user_id              int not null comment 'è‡ªå¢ä¸»é”®',
+   eva_id               int comment 'è‡ªå¢',
    goods_id             int not null,
-   Use_user_id          int not null comment '×ÔÔöÖ÷¼ü',
-   order_price          decimal not null,
-   pay_status           smallint not null comment '0Î´Ö§¸¶
-            1Ö§¸¶',
-   order_status         smallint not null comment '0´ı¸¶¿î
-            1´ú·¢»õ
-            2´ıÊÕ»õ
-            3Íê³É
-            4È¡Ïû
-            5ÊÛºó',
+   Use_user_id          int not null comment 'è‡ªå¢ä¸»é”®',
+   order_price          decimal(10,2) not null,
+   pay_status           smallint not null comment '0æœªæ”¯ä»˜
+            1æ”¯ä»˜',
+   order_status         smallint not null comment '0å¾…ä»˜æ¬¾
+            1ä»£å‘è´§
+            2å¾…æ”¶è´§
+            3å®Œæˆ
+            4å–æ¶ˆ
+            5å”®å',
    pay_time             datetime,
    finish_time          datetime,
    create_time          datetime not null,
    primary key (order_id)
 );
 
+alter table "order" comment 'è®¢å•';
+
 /*==============================================================*/
 /* Table: report                                                */
 /*==============================================================*/
 create table report
 (
-   report_id            int not null comment '×ÔÔö',
-   user_id              int not null comment '×ÔÔöÖ÷¼ü',
+   report_id            int not null comment 'è‡ªå¢',
+   user_id              int not null comment 'è‡ªå¢ä¸»é”®',
+   goods_id             int not null,
    report_type          smallint not null,
    report_contentV      varchar(500) not null,
    proof_img            varchar(255),
-   handle_status        smallint not null comment '0´ı´¦Àí
-            1ÒÑ´¦Àí',
+   handle_status        smallint not null comment '0å¾…å¤„ç†
+            1å·²å¤„ç†',
    result               varchar(200),
    report_time          datetime not null,
    primary key (report_id)
 );
 
-alter table category add constraint FK_rel_category_include_goods foreign key (goods_id)
-      references goods (goods_id) on delete restrict on update restrict;
+alter table report comment 'ä¸¾æŠ¥ç»´æƒ';
 
 alter table evaluate add constraint FK_rel_goods_create_evaluate foreign key (order_id)
       references "order" (order_id) on delete restrict on update restrict;
+
+alter table goods add constraint FK_rel_category_include_goods foreign key (cate_id)
+      references category (cate_id) on delete restrict on update restrict;
 
 alter table goods add constraint FK_rel_user_publish_goods foreign key (user_id)
       references User (user_id) on delete restrict on update restrict;
@@ -179,4 +188,7 @@ alter table "order" add constraint FK_rel_user_sell_order foreign key (user_id)
 
 alter table report add constraint FK_rel_user_create_report foreign key (user_id)
       references User (user_id) on delete restrict on update restrict;
+
+alter table report add constraint FK_ä¸¾æŠ¥ foreign key (goods_id)
+      references goods (goods_id) on delete restrict on update restrict;
 
