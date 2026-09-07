@@ -1,0 +1,179 @@
+/* ============================================================
+   Design Tokens — 校园二手交易平台
+   参考 Airbnb / Notion 的 token 分层思想：
+   单一品牌电压 + 中性色分层 + 圆角/阴影/间距/字号 scale
+   ============================================================ */
+
+:root {
+  /* ---------- 品牌色 ---------- */
+  --color-brand: #07c160;        /* 清新绿：logo、导航、激活态 */
+  --color-primary: #07c160;      /* 主绿：CTA 按钮、链接 */
+  --color-primary-hover: #06ad56;
+  --color-primary-active: #059b4d;
+
+  /* ---------- 中性色（ink/body/muted 分层） ---------- */
+  --color-ink: #222222;          /* 标题、主文字 */
+  --color-body: #3f3f3f;         /* 正文 */
+  --color-muted: #6a6a6a;        /* 次级文字 */
+  --color-muted-soft: #929292;   /* 弱文字 / 禁用 */
+
+  /* ---------- 表面与边框 ---------- */
+  --color-canvas: #ffffff;        /* 页面 / 卡片表面 */
+  --color-surface: #f7f7f7;       /* 浅灰填充 */
+  --color-surface-strong: #f2f2f2;/* 重灰填充 */
+  --color-hairline: #dddddd;      /* 默认 1px 边框 */
+  --color-hairline-soft: #ebebeb; /* 弱边框 */
+
+  /* ---------- 语义色 ---------- */
+  --color-price: #ff4d4f;         /* 价格（电商促销红） */
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+  --color-danger: #ff4d4f;
+
+  /* ---------- 圆角 scale ---------- */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  /* ---------- 阴影 scale（扁平优先，仅两层） ---------- */
+  --shadow-flat: none;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.02), 0 2px 6px rgba(0, 0, 0, 0.04),
+    0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* ---------- 间距 scale（4px 基数） ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ---------- 字号 scale ---------- */
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+
+  /* ---------- 旧变量别名（兼容已有组件，动态解析） ---------- */
+  --page-bg: var(--color-surface);
+  --card-bg: var(--color-canvas);
+  --text-main: var(--color-ink);
+  --text-sub: var(--color-muted);
+  --border-color: var(--color-hairline-soft);
+  --xianyu-yellow: var(--color-brand);
+  --xianyu-orange: var(--color-primary);
+  --xianyu-red: var(--color-price);
+
+  /* ---------- Element Plus 主题映射 ---------- */
+  --el-color-primary: var(--color-primary);
+  --el-color-primary-light-3: var(--color-primary-hover);
+  --el-color-primary-light-5: #38d07e;
+  --el-color-primary-light-7: #83e0a8;
+  --el-color-primary-light-8: #b5edcd;
+  --el-color-primary-light-9: #e7f9ef;
+  --el-color-primary-dark-2: var(--color-primary-active);
+}
+
+/* ---------- 深色模式 ---------- */
+html.dark {
+  --color-canvas: #1d1e1f;
+  --color-surface: #141414;
+  --color-surface-strong: #242526;
+  --color-ink: #e6e6e6;
+  --color-body: #c8c8c8;
+  --color-muted: #8a8a8a;
+  --color-muted-soft: #6a6a6a;
+  --color-hairline: #3a3a3a;
+  --color-hairline-soft: #2e2e2e;
+  --color-brand: #07c160;
+  --color-primary: #07c160;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-body);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', Roboto, Helvetica, Arial, sans-serif;
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ============================================================
+   通用工具类
+   ============================================================ */
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+/* 卡片：默认扁平，hover 浮起 */
+.hover-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.hover-card:hover {
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+/* 价格 */
+.price {
+  color: var(--color-price);
+  font-weight: 600;
+}
+.price::before {
+  content: '¥';
+  font-size: 0.75em;
+  margin-right: 1px;
+}
+
+/* 文本截断 */
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ellipsis-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
