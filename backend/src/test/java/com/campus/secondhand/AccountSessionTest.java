@@ -59,4 +59,38 @@ class AccountSessionTest {
                 .isInstanceOf(BusinessException.class);
         verify(users, never()).updatePassword(any(), any(), any());
     }
+    @Test void bannedAccountCannotLoginAndExistingSessionIsInvalidated() throws Exception {
+        var users = mock(UserMapper.class);
+        var encoder = new BCryptPasswordEncoder();
+        var original = row(encoder.encode("correct"));
+        var banned = new UserRow(original.userId(), original.userName(), original.password(), original.phone(),
+                null, null, 0, null, 1);
+        when(users.findByPhone(original.phone())).thenReturn(banned);
+        when(users.findById(original.userId())).thenReturn(banned);
+        assertThatThrownBy(() -> new AccountService(users, encoder).authenticate(original.phone(), "correct"))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("封禁");
+        authenticate(original);
+        var request = new MockHttpServletRequest("GET", "/api/users/me");
+        request.getSession();
+        var response = new MockHttpServletResponse();
+        var chain = new MockFilterChain();
+        new AccountSessionFilter(users, new ObjectMapper()).doFilter(request, response, chain);
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(request.getSession(false)).isNull();
+        assertThat(chain.getRequest()).isNull();
+    }
+    @Test void profileSupportsAddressUpdateAndExplicitClear() {
+        var users = mock(UserMapper.class);
+        var encoder = new BCryptPasswordEncoder();
+        when(users.findById("101")).thenReturn(new UserRow("101", "同学", "hash", "13800000000",
+                null, null, 0, null, 0, "校区1栋"));
+        var service = new AccountService(users, encoder);
+        assertThat(service.current("101").address()).isEqualTo("校区1栋");
+        service.updateProfile("101", null, null, null, "校区2栋");
+        verify(users).updateProfile("101", null, null, null, "校区2栋");
+        service.updateProfile("101", null, null, null, "");
+        verify(users).updateProfile("101", null, null, null, "");
+        service.updateProfile("101", null, null, null, null);
+        verify(users, times(2)).updateProfile(any(), any(), any(), any(), any());
+    }
 }

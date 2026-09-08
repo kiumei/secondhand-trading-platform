@@ -189,10 +189,10 @@
   </select>
   <select id="messageCount" resultType="long">SELECT COUNT(*) FROM message <include refid="messageWhere"/></select>
 
-  <sql id="reportColumns">report_id,user_id AS report_user_id,NULL AS goods_id,report_type,report_content,proof_img,handle_status,result AS handle_result</sql>
+  <sql id="reportColumns">report_id,user_id AS report_user_id,goods_id,report_type,report_content,proof_img,handle_status,result AS handle_result</sql>
   <insert id="insertReport" useGeneratedKeys="true" keyProperty="key.id" keyColumn="report_id">
-    INSERT INTO report(user_id,report_type,report_content,proof_img,handle_status,result,report_time)
-    VALUES(#{row.reportUserId},#{row.reportType},#{row.reportContent},#{row.proofImg},#{row.handleStatus},#{row.handleResult},CURRENT_TIMESTAMP)
+    INSERT INTO report(user_id,goods_id,report_type,report_content,proof_img,handle_status,result,report_time)
+    VALUES(#{row.reportUserId},#{row.goodsId},#{row.reportType},#{row.reportContent},#{row.proofImg},#{row.handleStatus},#{row.handleResult},CURRENT_TIMESTAMP)
   </insert>
   <select id="report" resultMap="report">SELECT <include refid="reportColumns"/> FROM report WHERE report_id=#{id}</select>
   <update id="handleReport">UPDATE report SET handle_status=1,result=#{result} WHERE report_id=#{id} AND handle_status=0</update>

@@ -11,5 +11,5 @@ public interface UserMapper {
     UserRow findById(@Param("userId") String userId);
     int insert(@Param("row") UserRow user, @Param("key") com.campus.secondhand.common.GeneratedId key);
     int updateProfile(@Param("userId") String userId, @Param("userName") String userName,
-            @Param("avatar") String avatar, @Param("intro") String intro);
+            @Param("avatar") String avatar, @Param("intro") String intro, @Param("address") String address);
 }

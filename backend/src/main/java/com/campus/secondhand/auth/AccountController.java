@@ -67,7 +67,7 @@ public class AccountController {
     @PatchMapping("/api/users/me")
     public ApiResponse<UserView> update(Authentication auth, @Valid @RequestBody ProfileRequest body) {
         return ApiResponse.success(accounts.updateProfile(com.campus.secondhand.common.CurrentUser.id(auth),
-                body.userName(), body.avatar(), body.intro()));
+                body.userName(), body.avatar(), body.intro(), body.address()));
     }
 
     @PutMapping("/api/users/me/password")
@@ -85,5 +85,5 @@ public class AccountController {
     public record ResetPasswordRequest(@NotBlank @Size(max = 72) String newPassword) { }
 
     public record ProfileRequest(@Size(max = 20) String userName,
-            @Size(max = 255) String avatar, @Size(max = 200) String intro) { }
+            @Size(max = 255) String avatar, @Size(max = 200) String intro, @Size(max = 255) String address) { }
 }

@@ -1752,7 +1752,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"举报待数据库补充\", () => { pm.response.to.have.status(409); pm.expect(pm.response.json().code).to.eql(\"REPORT_GOODS_UNAVAILABLE\"); });"
+                  "pm.test(\"举报关联商品保存成功\", () => { pm.response.to.have.status(200); const r = pm.response.json(); pm.expect(r.code).to.eql(\"OK\"); pm.expect(r.data.goodsId).to.eql(pm.variables.get(\"goodsId\")); pm.collectionVariables.set(\"reportId\", r.data.reportId); });"
                 ]
               }
             }
