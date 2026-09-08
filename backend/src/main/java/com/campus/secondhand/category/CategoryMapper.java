@@ -4,9 +4,7 @@ import java.util.List;
 
 public interface CategoryMapper {
     List<Category> findAll();
-    record Category(String categoryId, String cateName, String cateDesc, String parentId, Integer sort) {
-        public Category(String categoryId, String cateName, String cateDesc) {
-            this(categoryId, cateName, cateDesc, "0", 0);
-        }
-    }
+
+    /** 两级分类：parent_id=0 表示一级分类；数据库 category(cate_id, cate_name, parent_id, sort)。 */
+    record Category(String cateId, String cateName, Integer parentId, Integer sort) { }
 }

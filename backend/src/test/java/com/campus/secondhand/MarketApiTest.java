@@ -2,9 +2,11 @@ package com.campus.secondhand;
 
 import com.campus.secondhand.auth.AccountService;
 import com.campus.secondhand.category.CategoryMapper.Category;
+import com.campus.secondhand.common.StatusCodes;
 import com.campus.secondhand.market.*;
 import com.campus.secondhand.user.UserMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,15 +39,20 @@ class MarketApiTest {
     @Autowired MarketMapper db;
     @Autowired UserMapper users;
     static final String GOODS = """
-            {"categoryId":"c","title":"教材","sellPrice":"12.34","tradeType":2,"goodsDesc":"描述"}
+            {"cateId":"c","title":"教材","sellPrice":"12.34","tradeType":2,"goodsDesc":"描述",
+             "images":["http://img/a","http://img/b"]}
             """;
 
     @BeforeEach void setup() {
         reset(db, users);
-        when(db.category("c")).thenReturn(new Category("c", "教材", null));
-        when(db.goods(anyString())).thenReturn(MarketServiceTest.item(1));
-        when(db.lockGoods("g")).thenReturn(MarketServiceTest.item(1));
-        when(db.activeOrders("g")).thenReturn(List.of());
+        when(db.category("c")).thenReturn(new Category("c", "教材", 0, 1));
+        when(db.goods(anyString())).thenReturn(MarketServiceTest.item(StatusCodes.GOODS_LISTED));
+        when(db.lockGoods("g")).thenReturn(MarketServiceTest.item(StatusCodes.GOODS_LISTED));
+        when(db.activeOrderIds("g")).thenReturn(List.of());
+        when(db.images(anyString())).thenReturn(List.of("http://img/a", "http://img/b"));
+        when(db.deleteImages(anyString())).thenReturn(1);
+        when(db.insertImages(anyString(), anyList()))
+                .thenAnswer(inv -> ((java.util.List<?>) inv.getArgument(1)).size());
     }
     private MockHttpSession session(String id, String role) {
         var session = new MockHttpSession();
@@ -62,64 +69,118 @@ class MarketApiTest {
                 .contentType("application/json").content(body);
     }
     @Test void anonymousCanBrowseButCannotPublish() throws Exception {
-        when(db.goodsList(any())).thenReturn(List.of(MarketServiceTest.item(1))); when(db.goodsCount(any())).thenReturn(1L);
+        when(db.goodsList(any())).thenReturn(List.of(MarketServiceTest.item(StatusCodes.GOODS_LISTED)));
+        when(db.goodsCount(any())).thenReturn(1L);
         mvc.perform(get("/api/goods")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].sellPrice").value("12.34"))
-                .andExpect(jsonPath("$.data.items[0].publishTime").value("2026-09-07T09:00:00+08:00"));
+                .andExpect(jsonPath("$.data.items[0].publishTime").value("2026-09-07T09:00:00+08:00"))
+                .andExpect(jsonPath("$.data.items[0].coverUrl").value("http://img/1"));
         mvc.perform(write(post("/api/goods"), new MockHttpSession(), GOODS)).andExpect(status().isUnauthorized());
     }
     @Test void publishingValidatesMoneyAndUsesCurrentOwner() throws Exception {
         var session = session("seller", "STUDENT");
         mvc.perform(write(post("/api/goods"), session, GOODS.replace("12.34", "12.345"))).andExpect(status().isBadRequest());
-        verify(db, never()).insertGoods(any(), any(), any());
-        when(db.insertGoods(any(), eq("seller"), any())).thenAnswer(call -> { ((com.campus.secondhand.common.GeneratedId)call.getArgument(0)).setId("201"); return 1; });
-        mvc.perform(write(post("/api/goods"), session, GOODS)).andExpect(status().isOk());
-        verify(db).insertGoods(any(), eq("seller"), any());
+        verify(db, never()).insertGoods(any(), any());
+        when(db.insertGoods(eq("seller"), any())).thenReturn(1);
+        when(db.lastInsertId()).thenReturn(7L);
+        when(db.goods("7")).thenReturn(MarketServiceTest.item(StatusCodes.GOODS_PENDING));
+        mvc.perform(write(post("/api/goods"), session, GOODS)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.goodsStatus").value(0))
+                .andExpect(jsonPath("$.data.images.length()").value(2));
+        verify(db).insertGoods(eq("seller"), any());
+        verify(db).insertImages(eq("7"), any());
+    }
+    @Test void favoriteEndpointsStayScopedToCurrentSession() throws Exception {
+        var session = session("buyer", "STUDENT");
+        when(db.insertFavorite("buyer", "g")).thenReturn(1);
+        mvc.perform(write(post("/api/favorites"), session, "{\"goodsId\":\"g\"}")).andExpect(status().isOk());
+        verify(db).insertFavorite("buyer", "g");
+        mvc.perform(get("/api/favorites/g").session(session)).andExpect(status().isOk());
+        verify(db, atLeastOnce()).favoriteExists("buyer", "g");
+        mvc.perform(get("/api/favorites")).andExpect(status().isUnauthorized());
     }
     @Test void adminEndpointsRejectStudentsBeforeDatabaseWork() throws Exception {
-        mvc.perform(write(post("/api/admin/categories"), session("student", "STUDENT"), "{\"cateName\":\"教材\"}"))
+        mvc.perform(write(post("/api/admin/categories"), session("student", "STUDENT"), "{\"cateName\":\"教材\",\"parentId\":0}"))
                 .andExpect(status().isForbidden());
-        verify(db, never()).insertCategory(any(), any());
-        when(db.insertCategory(any(), any())).thenAnswer(call -> { ((com.campus.secondhand.common.GeneratedId)call.getArgument(0)).setId("7"); return 1; });
-        when(db.category(anyString())).thenReturn(new Category("c", "教材", null));
-        mvc.perform(write(post("/api/admin/categories"), session("admin", "ADMIN"), "{\"cateName\":\"教材\"}"))
-                .andExpect(status().isOk());
+        verify(db, never()).insertCategory(any());
+        when(db.insertCategory(any())).thenReturn(1);
+        when(db.lastInsertId()).thenReturn(9L);
+        when(db.category("9")).thenReturn(new Category("9", "教材", 0, 1));
+        mvc.perform(write(post("/api/admin/categories"), session("admin", "ADMIN"), "{\"cateName\":\"教材\",\"parentId\":0}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.cateId").value("9"))
+                .andExpect(jsonPath("$.data.parentId").value(0));
     }
-    @Test void adminCanEditPendingGoodsAndUserCanListOwnEvaluations() throws Exception {
-        when(db.lockGoods("g")).thenReturn(MarketServiceTest.item(0));
+    @Test void adminCanEditPendingGoodsAndDashboardAggregates() throws Exception {
+        when(db.lockGoods("g")).thenReturn(MarketServiceTest.item(StatusCodes.GOODS_PENDING));
         when(db.updateGoods(eq("g"), any())).thenReturn(1);
         mvc.perform(write(put("/api/admin/goods/g"), session("admin", "ADMIN"), GOODS))
                 .andExpect(status().isOk());
         verify(db).updateGoods(eq("g"), any());
 
-        mvc.perform(get("/api/users/me/evaluations").session(session("buyer", "STUDENT"))
-                        .param("userId", "victim").param("page", "1").param("pageSize", "10"))
+        when(db.countGoods()).thenReturn(12L);
+        when(db.countOrders()).thenReturn(34L);
+        when(db.salesAmount()).thenReturn(new BigDecimal("567.89"));
+        when(db.countGoodsByStatus(StatusCodes.GOODS_PENDING)).thenReturn(3L);
+        when(users.countUsers()).thenReturn(56L);
+        mvc.perform(get("/api/admin/dashboard").session(session("admin", "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.goodsCount").value(12))
+                .andExpect(jsonPath("$.data.salesAmount").value("567.89"))
+                .andExpect(jsonPath("$.data.pendingGoodsCount").value(3));
+        mvc.perform(get("/api/admin/dashboard")).andExpect(status().isUnauthorized());
+    }
+    @Test void adminOrdersAndEvaluationsAreAdminOnly() throws Exception {
+        when(db.adminOrders(isNull(), anyLong(), anyInt())).thenReturn(List.of(MarketServiceTest.order(0)));
+        when(db.adminOrderCount(isNull())).thenReturn(1L);
+        mvc.perform(get("/api/admin/orders").session(session("admin", "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1));
+        when(db.allEvaluations(anyLong(), anyInt())).thenReturn(List.of(
+                new Evaluation("9", "o", "g", "buyer", 5, "很好", MarketServiceTest.TIME)));
+        when(db.allEvaluationCount()).thenReturn(1L);
+        mvc.perform(get("/api/admin/evaluations").session(session("admin", "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].evaluateUserId").value("buyer"));
+        mvc.perform(delete("/api/admin/evaluations/9").session(session("admin", "ADMIN"))
+                        .header("X-CSRF-TOKEN", "invalid")).andExpect(status().isForbidden());
+        when(db.evaluation("9")).thenReturn(new Evaluation("9", "o", "g", "buyer", 5, "很好", MarketServiceTest.TIME));
+        when(db.deleteEvaluation("9")).thenReturn(1);
+        mvc.perform(write(delete("/api/admin/evaluations/9"), session("admin", "ADMIN"), ""))
                 .andExpect(status().isOk());
-        verify(db).userEvaluations("buyer", 0, 10);
-        verify(db).userEvaluationCount("buyer");
     }
     @Test void myGoodsCannotBeRedirectedToAnotherOwner() throws Exception {
         mvc.perform(get("/api/users/me/goods").session(session("seller", "STUDENT")).param("ownerId", "victim"))
                 .andExpect(status().isOk());
         verify(db).goodsList(argThat(f -> "seller".equals(f.ownerId())));
     }
+    @Test void receivedEvaluationsArePublicAndScopedToSeller() throws Exception {
+        when(db.sellerEvaluations(eq("seller"), anyLong(), anyInt())).thenReturn(List.of(
+                new Evaluation("9", "o", "g", "buyer", 4, "不错", MarketServiceTest.TIME)));
+        when(db.sellerEvaluationCount("seller")).thenReturn(1L);
+        mvc.perform(get("/api/users/seller/evaluations")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].evaluateContent").value("不错"));
+        verify(db, never()).userEvaluations(any(), anyLong(), anyInt());
+    }
     @Test void orderIgnoresForgedBuyerAndPrice() throws Exception {
         when(db.insertOrder(any())).thenReturn(1);
         mvc.perform(write(post("/api/orders"), session("buyer", "STUDENT"),
                 "{\"goodsId\":\"g\",\"buyerId\":\"victim\",\"orderPrice\":\"0.01\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.buyerId").value("buyer"))
-                .andExpect(jsonPath("$.data.orderPrice").value("12.34"));
+                .andExpect(jsonPath("$.data.orderPrice").value("12.34"))
+                .andExpect(jsonPath("$.data.payStatus").value(0));
     }
     @Test void orderActionRouteAndInvalidEvaluationAreChecked() throws Exception {
         when(db.order("o")).thenReturn(MarketServiceTest.order(0));
         when(db.lockOrder("o")).thenReturn(MarketServiceTest.order(0));
-        when(db.orderStatus("o", 0, 1)).thenReturn(1);
+        when(db.orderPay(eq("o"), eq(0), any())).thenReturn(1);
         var session = session("buyer", "STUDENT");
         mvc.perform(write(post("/api/orders/o/mock-pay"), session, "{}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.data.orderStatus").value(1));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.orderStatus").value(1))
+                .andExpect(jsonPath("$.data.payStatus").value(1));
         mvc.perform(write(post("/api/orders/o/evaluation"), session, "{\"score\":0}"))
                 .andExpect(status().isBadRequest());
-        verify(db, never()).insertEvaluation(any(), any());
+        verify(db, never()).insertEvaluation(any(), anyInt(), any(), any());
     }
     @Test void unrelatedUserCannotReadMessageOrHandleReport() throws Exception {
         when(db.message("m")).thenReturn(new Message("m", "a", "b", "私信", 0, MarketServiceTest.TIME));
@@ -130,39 +191,6 @@ class MarketApiTest {
                 .andExpect(status().isForbidden());
         verify(db, never()).readMessage(any(), any()); verify(db, never()).handleReport(any(), any());
     }
-    @Test void integrationListsRespectRoleAndCurrentIdentity() throws Exception {
-        mvc.perform(get("/api/admin/orders").session(session("buyer", "STUDENT"))).andExpect(status().isForbidden());
-        verify(db, never()).adminOrders(anyLong(), anyInt());
-        mvc.perform(get("/api/admin/orders").session(session("admin", "ADMIN"))).andExpect(status().isOk());
-        verify(db).adminOrders(0, 10);
-        mvc.perform(get("/api/users/me/messages").param("userId", "victim").session(session("buyer", "STUDENT")))
-                .andExpect(status().isOk());
-        verify(db).inbox("buyer", 0, 10);
-        verify(db).inboxCount("buyer");
-    }
-    @Test void publicProfileNeverIncludesPrivateAccountFields() throws Exception {
-        when(users.publicProfile("101")).thenReturn(new com.campus.secondhand.user.PublicUserView("101", "同学", null, "你好"));
-        mvc.perform(get("/api/public/users/101")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.userName").value("同学"))
-                .andExpect(jsonPath("$.data.phone").doesNotExist())
-                .andExpect(jsonPath("$.data.password").doesNotExist())
-                .andExpect(jsonPath("$.data.role").doesNotExist());
-    }
-    @Test void favoriteRoutesUseCurrentUserAndAdminDeletionRejectsStudents() throws Exception {
-        when(db.addFavorite("buyer", "g")).thenReturn(1);
-        mvc.perform(write(put("/api/goods/g/favorite"), session("buyer", "STUDENT"), "{\"userId\":\"victim\"}"))
-                .andExpect(status().isOk());
-        verify(db).addFavorite("buyer", "g");
-        mvc.perform(get("/api/users/me/favorites").param("userId", "victim").session(session("buyer", "STUDENT")))
-                .andExpect(status().isOk());
-        verify(db).favorites("buyer", 0, 10);
-        mvc.perform(write(delete("/api/admin/evaluations/1"), session("buyer", "STUDENT"), "{}"))
-                .andExpect(status().isForbidden());
-        verify(db, never()).deleteEvaluation(any());
-        when(db.deleteEvaluation("1")).thenReturn(1);
-        mvc.perform(write(delete("/api/admin/evaluations/1"), session("admin", "ADMIN"), "{}"))
-                .andExpect(status().isOk());
-    }
     @TestConfiguration
     static class Wiring {
         @Bean MarketMapper marketMapper() { return mock(MarketMapper.class); }
@@ -170,11 +198,16 @@ class MarketApiTest {
         @Bean GoodsService goodsService(MarketMapper db) { return new GoodsService(db); }
         @Bean OrderService orderService(MarketMapper db) { return new OrderService(db); }
         @Bean CommunicationService communicationService(MarketMapper db, UserMapper users) { return new CommunicationService(db, users); }
+        @Bean FavoriteService favoriteService(MarketMapper db) { return new FavoriteService(db); }
+        @Bean com.campus.secondhand.system.DashboardService dashboardService(MarketMapper db, UserMapper users) {
+            return new com.campus.secondhand.system.DashboardService(db, users);
+        }
         @Bean GoodsController goodsController(GoodsService service) { return new GoodsController(service); }
         @Bean OrderController orderController(OrderService service) { return new OrderController(service); }
         @Bean CommunicationController communicationController(CommunicationService service) { return new CommunicationController(service); }
-        @Bean IntegrationController integrationController(MarketMapper db, UserMapper users) { return new IntegrationController(db, users); }
-        @Bean FavoriteService favoriteService(MarketMapper db) { return new FavoriteService(db); }
         @Bean FavoriteController favoriteController(FavoriteService service) { return new FavoriteController(service); }
+        @Bean com.campus.secondhand.system.DashboardController dashboardController(com.campus.secondhand.system.DashboardService service) {
+            return new com.campus.secondhand.system.DashboardController(service);
+        }
     }
 }

@@ -20,9 +20,9 @@ public class CommunicationService {
     public Message send(String user, MessageInput input) {
         found(users.findById(input.receiveUserId()));
         var message = new Message(null, user, input.receiveUserId(), input.content(), 0, now());
-        var key = new com.campus.secondhand.common.GeneratedId();
-        changed(db.insertMessage(message, key));
-        return new Message(key.getId(), user, input.receiveUserId(), input.content(), 0, message.sendTime());
+        changed(db.insertMessage(message));
+        return new Message(String.valueOf(db.lastInsertId()), message.sendUserId(),
+                message.receiveUserId(), message.content(), message.isRead(), message.sendTime());
     }
     public PageResult<Message> messages(String user, String peer, PageQuery page) {
         require(peer != null && !peer.isBlank() && peer.length() <= 32, "接收人编号不正确");
@@ -36,16 +36,17 @@ public class CommunicationService {
         allow(message.receiveUserId().equals(user));
         if (message.isRead() == 0) { db.readMessage(id, user); }
     }
+
+    /** 举报不绑定商品（report 表无商品外键）；记录举报人、类型、内容与证据。 */
     @Transactional
     public Report report(String user, ReportInput input) {
-        require(input.reportType() != null && input.reportType().matches("[1-5]"), "举报类型必须为1至5");
-        found(db.goods(input.goodsId()));
-        var row = new Report(null, user, input.goodsId(), input.reportType(), input.reportContent(), input.proofImg(), 0, null);
-        var key = new com.campus.secondhand.common.GeneratedId();
-        changed(db.insertReport(row, key));
-        return new Report(key.getId(), user, row.goodsId(), row.reportType(), row.reportContent(), row.proofImg(), 0, null);
+        var report = new Report(null, user, input.reportType(), input.reportContent(),
+                input.proofImg(), 0, null, now());
+        changed(db.insertReport(report));
+        return new Report(String.valueOf(db.lastInsertId()), report.reportUserId(), report.reportType(),
+                report.reportContent(), report.proofImg(), report.handleStatus(),
+                report.handleResult(), report.reportTime());
     }
-
     public PageResult<Report> reports(String user, Integer status, PageQuery page) {
         require(status == null || status == 0 || status == 1, "举报处理状态不正确");
         return new PageResult<>(db.reports(user, status, page.getOffset(), page.getPageSize()),

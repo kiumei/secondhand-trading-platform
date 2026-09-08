@@ -1,8 +1,4 @@
 spring:
-  servlet:
-    multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
   application:
     name: secondhand-backend
   sql:
@@ -22,5 +18,3 @@ mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
-app:
-  upload-directory: ${UPLOAD_DIRECTORY:./uploads}
