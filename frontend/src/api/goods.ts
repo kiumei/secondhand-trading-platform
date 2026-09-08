@@ -4,6 +4,7 @@ import type { Goods, GoodsStatus, GoodsType, GoodsCondition } from '@/types'
 export interface GoodsQuery {
   keyword?: string
   categoryId?: number
+  categoryIds?: number[]
   minPrice?: number
   maxPrice?: number
   type?: GoodsType
@@ -20,6 +21,7 @@ export function listGoods(query: GoodsQuery = {}): Promise<Goods[]> {
     )
   }
   if (query.categoryId) list = list.filter((g) => g.categoryId === query.categoryId)
+  if (query.categoryIds?.length) list = list.filter((g) => query.categoryIds!.includes(g.categoryId))
   if (query.minPrice != null) list = list.filter((g) => g.price >= query.minPrice!)
   if (query.maxPrice != null) list = list.filter((g) => g.price <= query.maxPrice!)
   if (query.type) list = list.filter((g) => g.type === query.type)
@@ -53,9 +55,12 @@ export interface GoodsInput {
 
 export function createGoods(input: GoodsInput): Promise<Goods> {
   const db = getDB()
+  const seller = db.users.find((u) => u.id === input.sellerId)
   const goods: Goods = {
     id: nextId('goods'),
     ...input,
+    sellerName: seller?.nickname ?? '匿名用户',
+    wantCount: 0,
     status: 'pending',
     createdAt: new Date().toLocaleString('zh-CN'),
     views: 0,

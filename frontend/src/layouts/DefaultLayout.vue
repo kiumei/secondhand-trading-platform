@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { useFavoriteStore } from '@/stores/favorite'
@@ -13,7 +12,6 @@ import type { Bulletin } from '@/types'
 import DockBar from '@/components/DockBar.vue'
 
 const router = useRouter()
-const { t, locale } = useI18n()
 const userStore = useUserStore()
 const themeStore = useThemeStore()
 const favoriteStore = useFavoriteStore()
@@ -79,11 +77,6 @@ function toggleTheme() {
   themeStore.setTheme(themeStore.theme === 'light' ? 'dark' : 'light')
 }
 
-function toggleLocale() {
-  locale.value = locale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
-  themeStore.setLocale(locale.value as 'zh-CN' | 'en-US')
-}
-
 onMounted(async () => {
   loadSuggestWords()
   bulletins.value = await listBulletins()
@@ -94,7 +87,10 @@ onMounted(async () => {
 onBeforeUnmount(stopBulletinTimer)
 
 watch(() => userStore.isLoggedIn, () => {
-  if (userStore.isLoggedIn) favoriteStore.refresh()
+  if (userStore.isLoggedIn) {
+    favoriteStore.refresh()
+    userStore.syncBanStatus()
+  }
 })
 </script>
 
@@ -105,7 +101,7 @@ watch(() => userStore.isLoggedIn, () => {
       <div class="navbar-inner">
         <div class="logo" @click="router.push({ name: 'home' })">
           <span class="logo-icon">闲</span>
-          <span class="logo-text">{{ t('app.name') }}</span>
+          <span class="logo-text">校园二手集市</span>
         </div>
 
         <div class="search-box">
@@ -131,10 +127,6 @@ watch(() => userStore.isLoggedIn, () => {
             </el-icon>
           </el-tooltip>
 
-          <el-tooltip :content="locale === 'zh-CN' ? 'English' : '中文'" placement="bottom">
-            <el-icon :size="20" class="icon-btn" @click="toggleLocale"><Switch /></el-icon>
-          </el-tooltip>
-
           <template v-if="userStore.isLoggedIn">
             <el-dropdown>
               <span class="avatar-wrap">
@@ -143,7 +135,7 @@ watch(() => userStore.isLoggedIn, () => {
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="router.push({ name: 'profile' })">
-                    {{ t('app.profile') }}
+                    我的
                   </el-dropdown-item>
                   <el-dropdown-item @click="router.push({ name: 'orders' })">我的订单</el-dropdown-item>
                   <el-dropdown-item @click="router.push({ name: 'favorites' })">我的收藏</el-dropdown-item>
@@ -151,16 +143,16 @@ watch(() => userStore.isLoggedIn, () => {
                     v-if="userStore.isAdmin"
                     @click="router.push({ name: 'admin-dashboard' })"
                   >
-                    {{ t('app.admin') }}
+                    后台管理
                   </el-dropdown-item>
-                  <el-dropdown-item divided @click="onLogout">{{ t('app.logout') }}</el-dropdown-item>
+                  <el-dropdown-item divided @click="onLogout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
           </template>
           <template v-else>
             <el-button class="login-btn" round @click="router.push({ name: 'login' })">
-              {{ t('app.login') }}
+              登录
             </el-button>
           </template>
         </div>

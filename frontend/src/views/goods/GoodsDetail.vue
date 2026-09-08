@@ -7,7 +7,6 @@ import { getUser } from '@/api/user'
 import { listEvaluates, createEvaluate } from '@/api/evaluate'
 import { createOrder } from '@/api/order'
 import { createReport } from '@/api/report'
-import { sendMessage } from '@/api/message'
 import { useUserStore } from '@/stores/user'
 import { useFavoriteStore } from '@/stores/favorite'
 import type { Goods, User, Evaluate } from '@/types'
@@ -65,12 +64,8 @@ async function onMessage() {
     return
   }
   if (!goods.value) return
-  const { value } = await ElMessageBox.prompt('给卖家留言', '私信', {
-    confirmButtonText: '发送',
-    cancelButtonText: '取消',
-  })
-  await sendMessage(userStore.currentUser!.id, goods.value.sellerId, value)
-  ElMessage.success('消息已发送')
+  // 跳转到消息界面，自动定位到卖家会话
+  router.push({ name: 'messages', query: { to: String(goods.value.sellerId) } })
 }
 
 async function onReport() {

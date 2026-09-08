@@ -10,6 +10,8 @@ export interface User {
   bio?: string
   role: Role
   avatar: string
+  banned?: boolean
+  online?: boolean
 }
 
 export type GoodsStatus = 'on' | 'sold' | 'off' | 'pending' | 'rejected'
@@ -88,6 +90,7 @@ export interface Favorite {
 export interface Category {
   id: number
   name: string
+  parentId: number
 }
 
 export interface Bulletin {

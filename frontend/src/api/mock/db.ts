@@ -11,8 +11,23 @@ import type {
   SiteConfig,
 } from '@/types'
 
+// 真实商品图（src/assets 导入）
+import imgGaoshu from '@/assets/高等数学.jpg'
+import imgKaoyan from '@/assets/考研英语.jpg'
+import imgXigai from '@/assets/习概.jpg'
+import imgIphone from '@/assets/苹果手机.jpg'
+import imgIphone11 from '@/assets/iphone11.jpg'
+import imgAirpods from '@/assets/airprodpro3.jpg'
+import imgPad from '@/assets/联想平板电脑.jpg'
+import imgMouse from '@/assets/蝰蛇v3pro.jpg'
+import imgBasketball from '@/assets/篮球.jpg'
+import imgBadminton from '@/assets/二手羽毛球拍.jpg'
+import imgShoes from '@/assets/运动跑鞋.jpg'
+
 // 内存数据库，localStorage 持久化以便刷新后数据不丢
 const STORAGE_KEY = 'xianyu-mock-db'
+// 数据版本号：seed 结构变化时 +1，旧数据会自动重置
+const DB_VERSION = 5
 
 const placeholder = (seed: number) =>
   `https://picsum.photos/seed/goods${seed}/400/400`
@@ -29,72 +44,124 @@ function seedUsers(): User[] {
       bio: '负责平台审核与运营',
       role: 'admin',
       avatar: placeholder(100),
+      online: true,
     },
     {
       id: 2,
-      username: 'xiaoming',
+      username: 'xingyao',
       password: '123456',
-      nickname: '小明同学',
+      nickname: '星遥',
       phone: '13811112222',
       address: '北校区 3 号宿舍楼 502',
       bio: '考研上岸，出一些教材和生活用品',
       role: 'student',
       avatar: placeholder(101),
+      online: true,
     },
     {
       id: 3,
-      username: 'xiaohong',
+      username: 'zhiyu',
       password: '123456',
-      nickname: '小红',
+      nickname: '知予',
       phone: '13933334444',
       address: '南校区 1 号宿舍楼 201',
       bio: '医学院大二，喜欢淘好物',
       role: 'student',
       avatar: placeholder(102),
+      online: false,
     },
     {
       id: 4,
-      username: 'laowang',
+      username: 'jingan',
       password: '123456',
-      nickname: '老王学长',
+      nickname: '景安',
       phone: '13755556666',
       address: '东校区教师公寓 3 栋',
       bio: '毕业清理，数码设备自用保养好',
       role: 'student',
       avatar: placeholder(103),
+      online: true,
+    },
+    {
+      id: 5,
+      username: 'shuheng',
+      password: '123456',
+      nickname: '书珩',
+      phone: '13677778888',
+      address: '西校区 2 号宿舍楼 305',
+      bio: '计算机大三，出各种数码配件',
+      role: 'student',
+      avatar: placeholder(104),
+      online: false,
+    },
+    {
+      id: 6,
+      username: 'qinghe',
+      password: '123456',
+      nickname: '清禾',
+      phone: '13566667777',
+      address: '前湖校区南区 4 号宿舍楼 108',
+      bio: '文学社成员，出闲置书籍',
+      role: 'student',
+      avatar: placeholder(105),
+      online: true,
     },
   ]
 }
 
 function seedCategories(): Category[] {
   return [
-    { id: 1, name: '教材教辅' },
-    { id: 2, name: '数码产品' },
-    { id: 3, name: '生活用品' },
-    { id: 4, name: '运动户外' },
-    { id: 5, name: '服饰鞋包' },
-    { id: 6, name: '其他' },
+    // 4 个实物父类 + 1 个校园服务父类（parentId = 0）
+    { id: 1, name: '学习考试', parentId: 0 },
+    { id: 2, name: '数码装备', parentId: 0 },
+    { id: 3, name: '宿舍生活', parentId: 0 },
+    { id: 4, name: '穿搭休闲', parentId: 0 },
+    { id: 5, name: '校园服务', parentId: 0 },
+    // 子类
+    { id: 11, name: '教材文具', parentId: 1 },
+    { id: 12, name: '书籍资料', parentId: 1 },
+    { id: 21, name: '手机电脑', parentId: 2 },
+    { id: 22, name: '数码配件', parentId: 2 },
+    { id: 31, name: '宿舍用品', parentId: 3 },
+    { id: 32, name: '日常个护', parentId: 3 },
+    { id: 41, name: '运动服饰', parentId: 4 },
+    { id: 42, name: '零食美妆', parentId: 4 },
+    { id: 51, name: '技能服务', parentId: 5 },
+    { id: 52, name: '回收', parentId: 5 },
   ]
 }
 
 function seedGoods(): Goods[] {
   const items: Array<[number, string, string, number, number, string, number]> = [
-    [1, '高等数学（第七版）上下册', '考研上岸，教材全新，无笔记无划痕，两本一起出。', 35, 1, '教材教辅', 2],
-    [2, 'iPhone 12 128G 蓝色', '自用一年，无磕碰，电池健康 87%，配原装充电器。', 2800, 2, '数码产品', 2],
-    [3, '小米平板 5 Pro', '吃灰了，几乎全新，看网课神器，带保护壳和笔。', 1500, 2, '数码产品', 3],
-    [4, '罗技 G304 无线鼠标', '手感很好，换新了所以出，箱说全。', 129, 2, '数码产品', 4],
-    [5, '宿舍小冰箱 45L', '毕业出，制冷正常，噪音小，只支持校内自提。', 199, 3, '生活用品', 2],
-    [6, '台灯 护眼 led', '可调亮度色温，考研学习必备，九成新。', 45, 3, '生活用品', 3],
-    [7, '尤尼克斯羽毛球拍', '正品，26 磅线，送手胶和球袋。', 260, 4, '运动户外', 4],
-    [8, '篮球 斯伯丁 7号', '室内用，成色新，手感好。', 88, 4, '运动户外', 2],
-    [9, '牛仔外套 M码', '穿过两次，尺码不合适，学生价出。', 79, 5, '服饰鞋包', 3],
-    [10, '考研英语真题 全套', '张剑黄皮书，几乎全新，送答题卡。', 40, 1, '教材教辅', 4],
-    [11, 'AirPods Pro 一代', '降噪正常，送新耳塞，配件齐全。', 620, 2, '数码产品', 2],
-    [12, '电热水壶 1.8L', '宿舍可用，功率安全，九五新。', 39, 3, '生活用品', 3],
+    [1, '高等数学（第七版）上下册', '考研上岸，教材全新，无笔记无划痕，两本一起出。', 35, 11, '教材文具', 2],
+    [2, 'iPhone 12 128G 蓝色', '自用一年，无磕碰，电池健康 87%，配原装充电器。', 2800, 21, '手机电脑', 2],
+    [3, '联想平板电脑', '吃灰了，几乎全新，看网课神器，带保护壳和笔。', 1500, 21, '手机电脑', 5],
+    [4, '雷蛇蝰蛇 V3 Pro 鼠标', '手感很好，换新了所以出，箱说全。', 129, 22, '数码配件', 4],
+    [5, '宿舍小冰箱 45L', '毕业出，制冷正常，噪音小，只支持校内自提。', 199, 31, '宿舍用品', 2],
+    [6, '台灯 护眼 led', '可调亮度色温，考研学习必备，九成新。', 45, 31, '宿舍用品', 3],
+    [7, '羽毛球拍', '正品，26 磅线，送手胶和球袋。', 260, 41, '运动服饰', 6],
+    [8, '篮球 斯伯丁 7号', '室内用，成色新，手感好。', 88, 41, '运动服饰', 2],
+    [9, '运动跑鞋 42 码', '穿过两次，尺码不合适，学生价出。', 79, 41, '运动服饰', 5],
+    [10, '考研英语真题 全套', '张剑黄皮书，几乎全新，送答题卡。', 40, 12, '书籍资料', 6],
+    [11, 'AirPods Pro 一代', '降噪正常，送新耳塞，配件齐全。', 620, 22, '数码配件', 2],
+    [12, '习概（习近平新时代中国特色社会主义思想概论）', '考研政治必备用书，几乎全新。', 39, 12, '书籍资料', 3],
   ]
   const conditions: Goods['condition'][] = ['全新', '9成新', '8成新', '7成新', '6成新及以下']
-  const locations = ['前湖校区北区·修贤2栋', '前湖校区南区·医学8栋', '前湖校区北区·图书馆', '青山湖校区·学生宿舍3栋', '东湖校区·学生公寓']
-  const sellerNames: Record<number, string> = { 2: '小明同学', 3: '小红', 4: '老王学长' }
+  const locations = ['前湖校区北区·修贤社区·5栋', '前湖校区南区（医学部）·医学-8栋', '前湖校区北区·图书馆', '青山湖校区·北区学生宿舍7栋', '东湖校区·研究生宿舍2栋']
+  const sellerNames: Record<number, string> = { 2: '星遥', 3: '知予', 4: '景安', 5: '书珩', 6: '清禾' }
+  // 真实商品图映射（id -> 主图 + 附图）
+  const realImages: Record<number, string[]> = {
+    1: [imgGaoshu],
+    2: [imgIphone, imgIphone11],
+    3: [imgPad],
+    4: [imgMouse],
+    7: [imgBadminton],
+    8: [imgBasketball],
+    9: [imgShoes],
+    10: [imgKaoyan],
+    11: [imgAirpods],
+    12: [imgXigai],
+  }
   return items.map(
     ([id, title, desc, price, categoryId, _cat, sellerId], i) => ({
       id,
@@ -103,8 +170,8 @@ function seedGoods(): Goods[] {
       price,
       originalPrice: i % 3 === 0 ? Math.round(price * 1.4) : undefined,
       categoryId,
-      images: [placeholder(id + 200), placeholder(id + 300), placeholder(id + 400)],
-      status: (['on', 'on', 'on', 'on', 'pending', 'sold', 'on', 'on', 'on', 'on', 'on', 'rejected'] as Goods['status'][])[i] ?? 'on',
+      images: realImages[id] ?? [placeholder(id + 200), placeholder(id + 300), placeholder(id + 400)],
+      status: (['on', 'on', 'on', 'on', 'pending', 'sold', 'on', 'on', 'on', 'on', 'on', 'on'] as Goods['status'][])[i] ?? 'on',
       sellerId,
       type: 'sell' as const,
       condition: conditions[i % conditions.length],
@@ -169,6 +236,7 @@ const defaultSiteConfig: SiteConfig = {
 }
 
 export interface MockDB {
+  version: number
   users: User[]
   goods: Goods[]
   orders: Order[]
@@ -184,6 +252,7 @@ export interface MockDB {
 
 function createInitial(): MockDB {
   return {
+    version: DB_VERSION,
     users: seedUsers(),
     goods: seedGoods(),
     orders: seedOrders(),
@@ -194,7 +263,7 @@ function createInitial(): MockDB {
     categories: seedCategories(),
     bulletins: seedBulletins(),
     siteConfig: defaultSiteConfig,
-    seq: { goods: 13, order: 4, evaluate: 2, message: 4, report: 2, favorite: 3, bulletin: 3, user: 5 },
+    seq: { goods: 13, order: 4, evaluate: 2, message: 5, report: 2, favorite: 3, bulletin: 3, user: 7 },
   }
 }
 
@@ -205,8 +274,12 @@ function load(): MockDB {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
-      db = JSON.parse(raw) as MockDB
-      return db
+      const parsed = JSON.parse(raw) as MockDB & { version?: number }
+      // 版本不匹配则丢弃旧数据，重新初始化
+      if (parsed.version === DB_VERSION) {
+        db = parsed
+        return db
+      }
     }
   } catch {
     // ignore corrupt storage

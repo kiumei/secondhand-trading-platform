@@ -52,8 +52,13 @@ function goPublish() {
   router.push({ name: 'publish' })
 }
 
+function goService() {
+  router.push({ name: 'search', query: { group: '5' } })
+}
+
 const items = [
   { key: 'publish', icon: 'Plus', label: '发布', accent: true, fn: goPublish },
+  { key: 'service', icon: 'Service', label: '校园服务', fn: goService },
   { key: 'messages', icon: 'ChatDotRound', label: '消息', badge: () => msgCount.value },
   { key: 'orders', icon: 'Tickets', label: '订单', badge: () => orderCount.value },
   { key: 'favorites', icon: 'Star', label: '收藏', badge: () => favoriteStore.favorites.length },

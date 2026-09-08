@@ -13,7 +13,6 @@ const userStore = useUserStore()
 const step = ref(0)
 const form = reactive({
   theme: 'light' as 'light' | 'dark' | 'system',
-  locale: 'zh-CN' as 'zh-CN' | 'en-US',
   title: '',
   footer: '',
   adminUsername: 'admin',
@@ -26,7 +25,7 @@ const form = reactive({
 })
 
 const steps = [
-  { title: '外观设置', desc: '主题模式与语言' },
+  { title: '外观设置', desc: '主题模式' },
   { title: '站点信息', desc: '标题与页脚' },
   { title: '管理员账号', desc: '初始化管理员' },
   { title: '首页配置', desc: 'Hero 区域' },
@@ -43,7 +42,6 @@ function prev() {
 
 async function finish() {
   themeStore.setTheme(form.theme)
-  themeStore.setLocale(form.locale)
   await updateSiteConfig({
     title: form.title || '校园二手集市',
     footer: form.footer,
@@ -77,12 +75,6 @@ async function finish() {
                 <el-radio-button value="light">浅色</el-radio-button>
                 <el-radio-button value="dark">深色</el-radio-button>
                 <el-radio-button value="system">跟随系统</el-radio-button>
-              </el-radio-group>
-            </el-form-item>
-            <el-form-item label="语言">
-              <el-radio-group v-model="form.locale">
-                <el-radio-button value="zh-CN">中文</el-radio-button>
-                <el-radio-button value="en-US">English</el-radio-button>
               </el-radio-group>
             </el-form-item>
           </el-form>

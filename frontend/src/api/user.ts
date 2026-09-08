@@ -5,6 +5,8 @@ export function login(username: string, password: string): Promise<User | null> 
   const u = getDB().users.find(
     (x) => x.username === username && x.password === password,
   )
+  // 封禁用户不能登录
+  if (u?.banned) return delay(null)
   return delay(u ?? null)
 }
 
@@ -66,5 +68,35 @@ export function deleteUser(id: number): Promise<void> {
   const db = getDB()
   db.users = db.users.filter((x) => x.id !== id)
   persist()
+  return delay(undefined)
+}
+
+export function setBanned(id: number, banned: boolean): Promise<void> {
+  const db = getDB()
+  const u = db.users.find((x) => x.id === id)
+  if (u) {
+    u.banned = banned
+    persist()
+  }
+  return delay(undefined)
+}
+
+export function resetPassword(id: number, newPassword: string): Promise<void> {
+  const db = getDB()
+  const u = db.users.find((x) => x.id === id)
+  if (u) {
+    u.password = newPassword
+    persist()
+  }
+  return delay(undefined)
+}
+
+export function setOnline(id: number, online: boolean): Promise<void> {
+  const db = getDB()
+  const u = db.users.find((x) => x.id === id)
+  if (u) {
+    u.online = online
+    persist()
+  }
   return delay(undefined)
 }

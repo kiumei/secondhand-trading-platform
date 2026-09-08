@@ -40,6 +40,13 @@ onMounted(load)
     </div>
     <el-table v-loading="loading" :data="categories" style="width: 100%">
       <el-table-column prop="id" label="ID" width="80" />
+      <el-table-column label="层级" width="90">
+        <template #default="{ row }">
+          <el-tag :type="row.parentId === 0 ? 'primary' : 'info'" size="small">
+            {{ row.parentId === 0 ? '父类' : '子类' }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="name" label="分类名称" />
       <el-table-column label="操作" width="120">
         <template #default="{ row }">

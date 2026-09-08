@@ -7,7 +7,7 @@ export function listCategories(): Promise<Category[]> {
 
 export function createCategory(name: string): Promise<Category> {
   const db = getDB()
-  const c: Category = { id: nextId('goods'), name }
+  const c: Category = { id: nextId('goods'), name, parentId: 0 }
   db.categories.push(c)
   persist()
   return delay(c)

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listMessages, sendMessage } from '@/api/message'
 import { listUsers } from '@/api/user'
@@ -13,6 +13,9 @@ const messages = ref<Message[]>([])
 const users = ref<User[]>([])
 const activeUserId = ref<number | null>(null)
 const draft = ref('')
+
+// 新建会话弹窗
+const newChatVisible = ref(false)
 
 const activeUser = computed(() => users.value.find((u) => u.id === activeUserId.value))
 
@@ -29,6 +32,11 @@ const conversations = computed(() => {
     last: msgs[msgs.length - 1],
   }))
 })
+
+// 可发起新会话的用户（排除自己和已有会话的？不排除，保留全部非自己用户）
+const newChatUsers = computed(() =>
+  users.value.filter((u) => u.id !== userStore.currentUser?.id),
+)
 
 const activeMessages = computed(() => {
   if (activeUserId.value == null) return []
@@ -81,12 +89,43 @@ function goProfile(id: number) {
   router.push({ name: 'user-profile', params: { id } })
 }
 
-onMounted(load)
+function startNewChat(u: User) {
+  activeUserId.value = u.id
+  newChatVisible.value = false
+}
+
+// 切换账号时重新加载（清空当前会话，避免看到上一个账号的视角）
+watch(
+  () => userStore.currentUser?.id,
+  () => {
+    activeUserId.value = null
+    load()
+  },
+)
+
+// 轮询刷新，模拟实时收消息
+let pollTimer: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  load()
+  pollTimer = setInterval(() => {
+    if (userStore.isLoggedIn) load()
+  }, 3000)
+})
+
+onBeforeUnmount(() => {
+  if (pollTimer) clearInterval(pollTimer)
+})
 </script>
 
 <template>
   <div class="messages page-container">
-    <h2 class="page-title">消息</h2>
+    <div class="msg-toolbar">
+      <h2 class="page-title">消息</h2>
+      <el-button type="primary" size="small" @click="newChatVisible = true">
+        <el-icon style="margin-right: 4px"><Plus /></el-icon>新建会话
+      </el-button>
+    </div>
     <div class="chat-layout">
       <div class="conv-list">
         <div
@@ -96,19 +135,25 @@ onMounted(load)
           :class="{ active: activeUserId === c.user?.id }"
           @click="selectUser(c.user!.id)"
         >
-          <el-avatar :size="40" :src="c.user?.avatar" @click.stop="goProfile(c.user!.id)" />
+          <div class="avatar-wrap" @click.stop="goProfile(c.user!.id)">
+            <el-avatar :size="40" :src="c.user?.avatar" />
+            <span class="online-dot" :class="{ on: c.user?.online }" />
+          </div>
           <div class="conv-info">
             <div class="conv-name">{{ c.user?.nickname }}</div>
             <div class="conv-last ellipsis">{{ c.last?.image ? '[图片]' : c.last?.content }}</div>
           </div>
         </div>
-        <el-empty v-if="!conversations.length" description="暂无消息" />
+        <el-empty v-if="!conversations.length" description="暂无消息，点击右上角发起会话" />
       </div>
 
       <div class="chat-window">
         <template v-if="activeUser">
           <div class="chat-header" @click="goProfile(activeUser.id)">
-            <el-avatar :size="28" :src="activeUser.avatar" />
+            <div class="avatar-wrap">
+              <el-avatar :size="28" :src="activeUser.avatar" />
+              <span class="online-dot small" :class="{ on: activeUser.online }" />
+            </div>
             <span class="chat-header-name">{{ activeUser.nickname }}</span>
           </div>
           <div class="chat-body">
@@ -136,6 +181,25 @@ onMounted(load)
         <el-empty v-else description="选择左侧会话开始聊天" />
       </div>
     </div>
+
+    <!-- 新建会话弹窗 -->
+    <el-dialog v-model="newChatVisible" title="发起新会话" width="420px">
+      <div class="new-chat-list">
+        <div
+          v-for="u in newChatUsers"
+          :key="u.id"
+          class="new-chat-item"
+          @click="startNewChat(u)"
+        >
+          <div class="avatar-wrap">
+            <el-avatar :size="36" :src="u.avatar" />
+            <span class="online-dot" :class="{ on: u.online }" />
+          </div>
+          <span class="new-chat-name">{{ u.nickname }}</span>
+          <el-tag v-if="u.banned" type="danger" size="small">已封禁</el-tag>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -143,9 +207,57 @@ onMounted(load)
 .messages {
   padding-top: 24px;
 }
+.msg-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
 .page-title {
   font-size: 20px;
-  margin-bottom: 20px;
+  margin: 0;
+}
+.avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.online-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #ccc;
+  border: 2px solid var(--card-bg);
+}
+.online-dot.on {
+  background: #07c160;
+}
+.online-dot.small {
+  width: 9px;
+  height: 9px;
+  right: -2px;
+  bottom: -2px;
+}
+.new-chat-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+.new-chat-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.new-chat-item:hover {
+  background: var(--page-bg);
+}
+.new-chat-name {
+  flex: 1;
 }
 .chat-layout {
   display: flex;

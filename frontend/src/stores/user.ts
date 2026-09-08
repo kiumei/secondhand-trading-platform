@@ -46,6 +46,7 @@ export const useUserStore = defineStore('user', () => {
     if (u) {
       currentUser.value = u
       persist()
+      userApi.setOnline(u.id, true)
     }
     return u != null
   }
@@ -60,11 +61,15 @@ export const useUserStore = defineStore('user', () => {
     if (u) {
       currentUser.value = u
       persist()
+      userApi.setOnline(u.id, true)
     }
     return u != null
   }
 
   function logout() {
+    if (currentUser.value) {
+      userApi.setOnline(currentUser.value.id, false)
+    }
     currentUser.value = null
     persist()
   }
@@ -81,6 +86,18 @@ export const useUserStore = defineStore('user', () => {
     return userApi.updatePassword(currentUser.value.id, oldPassword, newPassword)
   }
 
+  // 同步当前用户状态（含封禁），被封禁则登出
+  async function syncBanStatus() {
+    if (!currentUser.value) return
+    const u = await userApi.getUser(currentUser.value.id)
+    if (!u || u.banned) {
+      logout()
+      return
+    }
+    currentUser.value = u
+    persist()
+  }
+
   return {
     currentUser,
     isLoggedIn,
@@ -91,5 +108,6 @@ export const useUserStore = defineStore('user', () => {
     logout,
     updateProfile,
     updatePassword,
+    syncBanStatus,
   }
 })

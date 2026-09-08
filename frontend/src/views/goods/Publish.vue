@@ -5,22 +5,28 @@ import { ElMessage } from 'element-plus'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
 import { createGoods } from '@/api/goods'
-import { listCategories } from '@/api/admin'
 import { useUserStore } from '@/stores/user'
 import { locationTree } from '@/constants/locations'
-import type { Category, GoodsType, GoodsCondition } from '@/types'
+import { categoryGroups } from '@/constants/categories'
+import type { GoodsType, GoodsCondition } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-const categories = ref<Category[]>([])
 const submitting = ref(false)
 
 const conditions: GoodsCondition[] = ['全新', '9成新', '8成新', '7成新', '6成新及以下']
 
+// 级联选择：父类 + 子类
+const categoryOptions = categoryGroups.map((g) => ({
+  value: g.id,
+  label: g.name,
+  children: g.children.map((c) => ({ value: c.id, label: c.name })),
+}))
+
 const form = reactive({
   title: '',
-  categoryId: 0,
+  categoryPath: [] as number[],
   condition: '全新' as GoodsCondition,
   price: 0,
   originalPrice: undefined as number | undefined,
@@ -90,7 +96,7 @@ function removeExtraImage(index: number) {
 function validate(): string | null {
   if (!mainImage.value) return '请上传商品主图'
   if (!form.title.trim()) return '请输入商品名称'
-  if (!form.categoryId) return '请选择商品分类'
+  if (!form.categoryPath.length) return '请选择商品分类'
   if (!form.price || form.price <= 0) return '请输入价格'
   if (!form.location.length) return '请选择商品所在地'
   return null
@@ -105,12 +111,13 @@ async function submit() {
   if (!userStore.currentUser) return
   submitting.value = true
   const images = [mainImage.value, ...extraImages.value]
+  const categoryId = form.categoryPath[form.categoryPath.length - 1] ?? 0
   await createGoods({
     title: form.title.trim(),
     desc: editorHtml.value,
     price: form.price,
     originalPrice: form.originalPrice,
-    categoryId: form.categoryId,
+    categoryId,
     type: form.type,
     condition: form.condition,
     location: form.location.join('·'),
@@ -121,10 +128,6 @@ async function submit() {
   ElMessage.success('发布成功，商品进入待审核，可在「我的 → 我发布的商品」查看审核进度')
   router.push({ name: 'profile' })
 }
-
-onMounted(async () => {
-  categories.value = await listCategories()
-})
 </script>
 
 <template>
@@ -189,9 +192,14 @@ onMounted(async () => {
         <!-- 商品分类 -->
         <div class="field">
           <div class="field-label"><span class="required">*</span>商品分类</div>
-          <el-select v-model="form.categoryId" placeholder="请选择商品分类" style="width: 100%">
-            <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
-          </el-select>
+          <el-cascader
+            v-model="form.categoryPath"
+            :options="categoryOptions"
+            :props="{ expandTrigger: 'hover' }"
+            placeholder="请选择商品分类"
+            clearable
+            style="width: 100%"
+          />
         </div>
 
         <!-- 商品成色 -->

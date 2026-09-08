@@ -2,15 +2,14 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { listGoods } from '@/api/goods'
-import { listCategories } from '@/api/admin'
-import type { Goods, Category } from '@/types'
+import type { Goods } from '@/types'
 import GoodsGrid from '@/components/GoodsGrid.vue'
+import { categoryGroups, getSubIds } from '@/constants/categories'
 
 const router = useRouter()
 const goods = ref<Goods[]>([])
 const allGoods = ref<Goods[]>([])
-const categories = ref<Category[]>([])
-const activeCategory = ref<number>(0)
+const activeGroup = ref<number>(0)
 const loading = ref(false)
 
 // 排序
@@ -40,30 +39,16 @@ const sortedGoods = computed(() => {
   }
 })
 
-// 分类图标映射
-const categoryIcons: Record<string, string> = {
-  '教材教辅': 'Reading',
-  '数码产品': 'Cellphone',
-  '生活用品': 'House',
-  '运动户外': 'Basketball',
-  '服饰鞋包': 'ShoppingBag',
-  '其他': 'MoreFilled',
-}
+// 左侧导航：4 个实物父类（不含校园服务）
+const navGroups = computed(() => categoryGroups.filter((g) => !g.service))
 
-// 分类推荐卡片配色（橙黄绿粉）
-const featCards = [
-  { name: '手机 / 数码 / 电脑', color: '#ff8200', tint: '#fff3e6', categoryId: 2 },
-  { name: '服饰 / 箱包 / 运动', color: '#ffc300', tint: '#fff8e0', categoryId: 5 },
-  { name: '技能 / 卡券 / 潮玩', color: '#07c160', tint: '#e8f9ef', categoryId: 4 },
-  { name: '母婴 / 美妆 / 个护', color: '#ff64c8', tint: '#fde0f0', categoryId: 3 },
-]
-
-const activeCategoryName = computed(
-  () => categories.value.find((c) => c.id === activeCategory.value)?.name ?? '',
+const activeGroupName = computed(
+  () => categoryGroups.find((g) => g.id === activeGroup.value)?.name ?? '',
 )
 
-function featGoods(categoryId: number): Goods[] {
-  return allGoods.value.filter((g) => g.categoryId === categoryId).slice(0, 3)
+function featGoods(groupId: number): Goods[] {
+  const ids = getSubIds(groupId)
+  return allGoods.value.filter((g) => ids.includes(g.categoryId)).slice(0, 3)
 }
 
 async function loadAll() {
@@ -73,25 +58,26 @@ async function loadAll() {
   loading.value = false
 }
 
-async function switchCategory(id: number) {
-  activeCategory.value = id
+async function switchGroup(id: number) {
+  activeGroup.value = id
   loading.value = true
-  goods.value = id === 0 ? allGoods.value : await listGoods({ categoryId: id, status: 'on' })
+  if (id === 0) {
+    goods.value = allGoods.value
+  } else {
+    goods.value = await listGoods({ categoryIds: getSubIds(id), status: 'on' })
+  }
   loading.value = false
 }
 
-function goCategoryGoods(id: number) {
-  router.push({ name: 'search', query: { category: String(id) } })
+function goGroupGoods(groupId: number) {
+  router.push({ name: 'search', query: { group: String(groupId) } })
 }
 
 function goAll() {
   router.push({ name: 'search' })
 }
 
-onMounted(async () => {
-  categories.value = await listCategories()
-  await loadAll()
-})
+onMounted(loadAll)
 </script>
 
 <template>
@@ -101,31 +87,31 @@ onMounted(async () => {
       <aside class="side-nav">
         <div
           class="side-nav-item"
-          :class="{ active: activeCategory === 0 }"
-          @click="switchCategory(0)"
+          :class="{ active: activeGroup === 0 }"
+          @click="switchGroup(0)"
         >
           <el-icon :size="18"><Grid /></el-icon>
           <span>全部</span>
         </div>
         <div
-          v-for="c in categories"
-          :key="c.id"
+          v-for="g in navGroups"
+          :key="g.id"
           class="side-nav-item"
-          :class="{ active: activeCategory === c.id }"
-          @click="switchCategory(c.id)"
+          :class="{ active: activeGroup === g.id }"
+          @click="switchGroup(g.id)"
         >
-          <el-icon :size="18"><component :is="categoryIcons[c.name] || 'MoreFilled'" /></el-icon>
-          <span>{{ c.name }}</span>
+          <el-icon :size="18"><component :is="g.icon" /></el-icon>
+          <span>{{ g.name }}</span>
         </div>
       </aside>
 
       <!-- 中间内容区 -->
       <div class="content">
         <!-- 选中分类时：分类商品列表 -->
-        <template v-if="activeCategory !== 0">
+        <template v-if="activeGroup !== 0">
           <div class="featured">
             <div class="featured-head">
-              <h2 class="featured-title">{{ activeCategoryName }}</h2>
+              <h2 class="featured-title">{{ activeGroupName }}</h2>
               <div class="featured-right">
                 <span class="featured-count">共 {{ goods.length }} 件</span>
                 <el-dropdown trigger="click" @command="(k: string) => sortBy = k as SortKey">
@@ -168,22 +154,25 @@ onMounted(async () => {
           <!-- 分类推荐卡片 2×2 -->
           <div class="feat-grid">
             <div
-              v-for="f in featCards"
-              :key="f.name"
+              v-for="f in navGroups"
+              :key="f.id"
               class="feat-card"
               :style="{ background: f.tint }"
-              @click="goCategoryGoods(f.categoryId)"
+              @click="goGroupGoods(f.id)"
             >
               <div class="feat-head">
-                <span class="feat-name" :style="{ color: f.color }">{{ f.name }}</span>
-                <el-icon class="feat-arrow"><ArrowRight /></el-icon>
+                <span class="feat-name" :style="{ color: f.color }">
+                  <el-icon :size="16" style="margin-right: 4px"><component :is="f.icon" /></el-icon>
+                  {{ f.name }}
+                </span>
+                <span class="feat-sub">{{ f.children.map((c) => c.name).join(' · ') }}</span>
               </div>
               <div class="feat-thumbs">
-                <div v-for="g in featGoods(f.categoryId)" :key="g.id" class="feat-thumb">
+                <div v-for="g in featGoods(f.id)" :key="g.id" class="feat-thumb">
                   <img :src="g.images[0]" :alt="g.title" />
                   <span class="feat-price">{{ g.price }}</span>
                 </div>
-                <el-empty v-if="!featGoods(f.categoryId).length" description="暂无" :image-size="40" />
+                <el-empty v-if="!featGoods(f.id).length" description="暂无" :image-size="40" />
               </div>
             </div>
           </div>
@@ -328,6 +317,12 @@ onMounted(async () => {
 .feat-name {
   font-weight: 700;
   font-size: var(--text-md);
+  display: inline-flex;
+  align-items: center;
+}
+.feat-sub {
+  font-size: var(--text-xs);
+  color: var(--text-sub);
 }
 .feat-arrow {
   color: var(--text-sub);

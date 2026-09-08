@@ -59,7 +59,7 @@ async function submit() {
         <el-link type="primary" @click="router.push({ name: 'register' })">立即注册</el-link>
       </div>
       <div class="demo-hint">
-        测试账号：admin / 123456（管理员），xiaoming / 123456（学生）
+        测试账号：admin / 123456（管理员），xingyao / 123456（学生）
       </div>
     </div>
   </div>
