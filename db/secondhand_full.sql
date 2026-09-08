@@ -11,7 +11,7 @@
  Target Server Version : 80044 (8.0.44)
  File Encoding         : 65001
 
- Date: 08/09/2026 16:07:50
+ Date: 08/09/2026 16:24:42
 */
 
 SET NAMES utf8mb4;
@@ -1550,6 +1550,7 @@ CREATE TABLE `sys_user`  (
   `role` smallint NOT NULL COMMENT '角色：0普通用户、1管理员',
   `status` smallint NOT NULL COMMENT '账号状态：0正常、1封禁',
   `register_time` datetime NULL DEFAULT NULL,
+  `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '收货地址',
   PRIMARY KEY (`user_id`) USING BTREE,
   UNIQUE INDEX `phone`(`phone` ASC) USING BTREE,
   CONSTRAINT `chk_user_role` CHECK (`role` in (0,1)),
@@ -1559,106 +1560,106 @@ CREATE TABLE `sys_user`  (
 -- ----------------------------
 -- Records of sys_user
 -- ----------------------------
-INSERT INTO `sys_user` VALUES (1, '郝睿', '19028135411', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'vXqAma2Pqa', '5zodaJReTa', 1, 0, '2022-05-16 15:42:02');
-INSERT INTO `sys_user` VALUES (2, '向致远', '14572081876', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'cjMgatpt7E', 'aEYTgRSnJV', 1, 0, '2006-11-30 08:29:04');
-INSERT INTO `sys_user` VALUES (3, '武子韬', '15861176797', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'OCBRzL3C41', 'AR6hKR4t0i', 0, 0, '2022-03-22 10:08:02');
-INSERT INTO `sys_user` VALUES (4, '宋岚', '14103924816', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'LZQhoQKx5G', 'IIt7do45O8', 0, 0, '2015-07-03 09:55:07');
-INSERT INTO `sys_user` VALUES (5, '廖詩涵', '16924344849', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'DWAxCVdNrI', 'N39PZTcpCk', 0, 0, '2002-05-13 05:03:50');
-INSERT INTO `sys_user` VALUES (6, '余安琪', '14330596984', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'rp9meDQGRE', 'qfCupzBDKy', 0, 0, '2024-01-05 16:23:07');
-INSERT INTO `sys_user` VALUES (7, '戴云熙', '19256343272', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'ta2dLQtX5b', '5Rac659OFZ', 0, 0, '2025-07-23 06:06:28');
-INSERT INTO `sys_user` VALUES (8, '石云熙', '18137578405', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9GkmVFiqpm', 'rIknPhX9Uz', 0, 0, '2011-09-20 12:05:44');
-INSERT INTO `sys_user` VALUES (9, '崔云熙', '18955248839', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'yAwFZRpnbH', '8FE7B1s63o', 0, 0, '2001-12-27 02:46:08');
-INSERT INTO `sys_user` VALUES (10, '龚子异', '16919068636', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'wDoIUctQPE', 'sujOQr3bW4', 0, 0, '2005-01-27 07:22:47');
-INSERT INTO `sys_user` VALUES (11, '张子异', '13410657358', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'ZfyJEFHxP4', 'uMp6bWrcJl', 0, 0, '2005-06-18 11:47:56');
-INSERT INTO `sys_user` VALUES (12, '陆云熙', '13116906669', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'OmScZ69Z4z', '8AtMuVtp5B', 0, 0, '2007-02-05 19:29:13');
-INSERT INTO `sys_user` VALUES (13, '侯秀英', '16895763309', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'TpLpkCYxMa', 'bxjFpszFJ5', 0, 0, '2024-10-03 06:24:09');
-INSERT INTO `sys_user` VALUES (14, '彭岚', '17623988031', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'YBhyf2Y6uX', 'nxSOLxJl2C', 0, 0, '2008-05-21 13:50:46');
-INSERT INTO `sys_user` VALUES (15, '邓致远', '18364022995', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'QVTOctR7zD', 'fFUya5m4JK', 0, 0, '2001-10-31 10:00:22');
-INSERT INTO `sys_user` VALUES (16, '苏宇宁', '19419828272', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'l64JS9EIwc', '1yV0jHQZmJ', 0, 0, '2004-06-16 18:30:49');
-INSERT INTO `sys_user` VALUES (17, '汪云熙', '17940699052', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '7JEebdfGLY', 'O59dhfmSMv', 0, 0, '2017-12-31 07:30:23');
-INSERT INTO `sys_user` VALUES (18, '钱宇宁', '17978205337', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'USulTEkaMt', '1owOP15rMZ', 0, 0, '2003-01-02 18:45:27');
-INSERT INTO `sys_user` VALUES (19, '秦杰宏', '14071283361', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Y83REy9bbD', 'PTpxTsgVbD', 0, 0, '2011-06-08 03:29:42');
-INSERT INTO `sys_user` VALUES (20, '许杰宏', '14857388565', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '26sVtjCCz8', 'NvvcPzDPZj', 0, 0, '2014-11-26 11:09:04');
-INSERT INTO `sys_user` VALUES (21, '莫子韬', '16684392867', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'xzQUlk4Swk', 'ZoBPfljwDP', 0, 0, '2017-03-05 21:18:21');
-INSERT INTO `sys_user` VALUES (22, '孔岚', '19581107903', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Ho9gFwWZ2M', 'E102VmPR9y', 0, 0, '2025-01-04 06:32:16');
-INSERT INTO `sys_user` VALUES (23, '谢璐', '16920040895', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'JejqRhygnU', 'CaWUwodlAO', 0, 0, '2023-12-31 12:51:25');
-INSERT INTO `sys_user` VALUES (24, '钟震南', '14472691284', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '7Zv6g5iGzC', 'ZuIS7DxQN9', 0, 0, '2017-12-01 21:11:26');
-INSERT INTO `sys_user` VALUES (25, '邵秀英', '15628893378', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'UHe2FJUzUx', 'owNNVUlF3K', 0, 0, '2015-08-12 06:43:15');
-INSERT INTO `sys_user` VALUES (26, '顾安琪', '17600117678', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'q39gjMzxRn', 'gkX5L3vejV', 0, 0, '2011-02-24 14:54:47');
-INSERT INTO `sys_user` VALUES (27, '苏璐', '15259350289', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 's1QJztFjUv', 'ObKAFWeqyj', 0, 0, '2026-07-19 18:44:32');
-INSERT INTO `sys_user` VALUES (28, '钟晓明', '16243631724', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9igherLQad', 'aiJK9drqlf', 0, 0, '2004-05-18 08:16:53');
-INSERT INTO `sys_user` VALUES (29, '马詩涵', '16754469727', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'QrM4L1TrdB', 'JiuC0a2fXx', 0, 0, '2002-06-06 15:40:57');
-INSERT INTO `sys_user` VALUES (30, '刘震南', '18490237100', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'pMwTjdwleL', 'xz2z2d35VR', 0, 0, '2021-06-06 22:25:14');
-INSERT INTO `sys_user` VALUES (31, '陶睿', '18823985756', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'UDZnEU7fov', 'TKnxAfzN5n', 0, 0, '2004-04-26 23:10:10');
-INSERT INTO `sys_user` VALUES (32, '董云熙', '13894278475', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '2YgHm2RGBt', 'MsKZkdjQaz', 0, 0, '2017-03-08 12:40:05');
-INSERT INTO `sys_user` VALUES (33, '赵岚', '18913744650', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'qwOVrLKyNj', 'UPJ29vYx5C', 0, 0, '2005-12-27 08:30:16');
-INSERT INTO `sys_user` VALUES (34, '薛致远', '16648826621', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'VYDkdi6Or6', 'DVJNFQC0LK', 0, 0, '2000-03-23 07:19:06');
-INSERT INTO `sys_user` VALUES (35, '邱致远', '14670549845', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'wKyqiEbK0V', 'eELeqfpcAx', 0, 0, '2020-08-01 01:42:00');
-INSERT INTO `sys_user` VALUES (36, '常璐', '19213131977', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'PzKUdsdDq2', 'nyvLYFLJ0j', 0, 0, '2001-02-22 10:25:04');
-INSERT INTO `sys_user` VALUES (37, '阎致远', '18343472150', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'b8EbhyxcxM', '8ummozcCrf', 0, 0, '2024-03-08 21:31:38');
-INSERT INTO `sys_user` VALUES (38, '金安琪', '18367938811', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'fkhsJzC1gK', 'OWFW5Hjb69', 0, 0, '2016-09-18 01:40:35');
-INSERT INTO `sys_user` VALUES (39, '顾睿', '19382537069', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'SWKPz7JbXT', 'rOWDguTCc1', 0, 0, '2009-02-18 16:48:16');
-INSERT INTO `sys_user` VALUES (40, '董云熙', '19678909146', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'BFP4Frszwh', 'EIJWiyeIDW', 0, 0, '2002-02-16 18:41:50');
-INSERT INTO `sys_user` VALUES (41, '江睿', '19029274749', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '6QPPorOdno', 'Do6jxqStYg', 0, 0, '2001-09-13 08:21:45');
-INSERT INTO `sys_user` VALUES (42, '严震南', '14588666944', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'As6fajDopJ', 'VY3seixTHs', 0, 0, '2011-08-25 22:02:56');
-INSERT INTO `sys_user` VALUES (43, '彭杰宏', '16883557028', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'R34ZYbVGZ0', 'yjkC488AHW', 0, 0, '2005-07-16 14:43:31');
-INSERT INTO `sys_user` VALUES (44, '田璐', '19830483456', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9o4sLXA8rO', 'wmDWblVQRV', 0, 0, '2017-05-23 21:00:18');
-INSERT INTO `sys_user` VALUES (45, '邵岚', '16706898751', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'zCOSePa5ZF', 'JWfYmx9oKq', 0, 0, '2021-10-15 15:31:46');
-INSERT INTO `sys_user` VALUES (46, '丁晓明', '18898589477', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'IUvxqgHxyf', 'HYb8G4dAYv', 0, 0, '2000-11-26 00:26:37');
-INSERT INTO `sys_user` VALUES (47, '苏璐', '19682844546', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'NysjvBPqYU', 'bXgReYI0KV', 0, 0, '2002-08-26 11:25:56');
-INSERT INTO `sys_user` VALUES (48, '陈杰宏', '19213198826', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'lSIJCQJpQQ', 'mAxBLtWsDR', 0, 0, '2008-10-25 10:53:08');
-INSERT INTO `sys_user` VALUES (49, '江杰宏', '17848972002', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '5KuxJBaOc8', '7CPkMn5uLw', 0, 0, '2018-05-27 00:56:19');
-INSERT INTO `sys_user` VALUES (50, '孔詩涵', '15007659658', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'BfYAojcqmM', 'rurDDfXSE1', 0, 0, '2003-10-26 10:34:18');
-INSERT INTO `sys_user` VALUES (51, '贺安琪', '17771790008', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'sBPb1wPq1c', '7vMrwZGOsg', 0, 0, '2015-03-07 12:17:03');
-INSERT INTO `sys_user` VALUES (52, '高杰宏', '16278230591', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jPyZXLUGh5', 'WgFs1JRH4p', 0, 0, '2012-02-29 18:19:13');
-INSERT INTO `sys_user` VALUES (53, '邱詩涵', '18898109323', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'ASDCWYT9yV', '0NXRzjGHol', 0, 0, '2013-06-18 04:34:31');
-INSERT INTO `sys_user` VALUES (54, '蔡安琪', '19450181170', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'sMivOJi4yw', 'FqM4T6P2IT', 0, 0, '2008-07-04 09:00:45');
-INSERT INTO `sys_user` VALUES (55, '程晓明', '17374111023', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'lVClCN8WsQ', 'sRPUjE5gWg', 0, 0, '2008-09-19 19:26:56');
-INSERT INTO `sys_user` VALUES (56, '廖致远', '16125937207', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'tCUUPJoVy4', 'tTayrzOD08', 0, 0, '2020-03-22 03:06:26');
-INSERT INTO `sys_user` VALUES (57, '向睿', '19654261451', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'F038u2FsII', 'A6NrnB33f8', 0, 0, '2025-05-16 08:52:18');
-INSERT INTO `sys_user` VALUES (58, '邱晓明', '15009504299', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Q8Zrn3FfnT', 'sar3Toz6WT', 0, 0, '2003-12-17 06:14:26');
-INSERT INTO `sys_user` VALUES (59, '田秀英', '14513147210', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'h1llcGxOUl', 'zKBSsRzS2H', 0, 0, '2016-04-12 04:53:43');
-INSERT INTO `sys_user` VALUES (60, '武詩涵', '17543818779', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jkk5qZFuGu', 'Mu0RGnIylo', 0, 0, '2020-05-20 05:13:40');
-INSERT INTO `sys_user` VALUES (61, '史岚', '17049030582', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '3jDNTZLPVY', 'l7IcWX6Gsy', 0, 0, '2015-06-07 07:54:48');
-INSERT INTO `sys_user` VALUES (62, '赵致远', '13843093227', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '3y95nyteuv', 'yoApmaWZvT', 0, 0, '2018-12-04 07:33:51');
-INSERT INTO `sys_user` VALUES (63, '汪宇宁', '15665739800', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'BwnPyTwRbc', 'm4ZJi5hK4l', 0, 0, '2007-12-19 17:47:02');
-INSERT INTO `sys_user` VALUES (64, '武致远', '15520660973', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'K5vE5tAWLC', 'i8qKwQpyhT', 0, 0, '2015-03-04 01:30:10');
-INSERT INTO `sys_user` VALUES (65, '胡璐', '16880156182', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0idqCrSZWc', 'EIG20f8U33', 0, 0, '2011-05-27 22:06:48');
-INSERT INTO `sys_user` VALUES (66, '吴安琪', '18126984592', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Vcd4z0MBB2', 'Z4egKNUoOF', 0, 0, '2024-05-28 07:55:08');
-INSERT INTO `sys_user` VALUES (67, '史安琪', '14342191694', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '20pCIeZBnU', 'wyi4RspcdT', 0, 0, '2000-06-16 15:49:31');
-INSERT INTO `sys_user` VALUES (68, '尹睿', '17641458790', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'VXr8o3S4PW', 'AxQGROMq8A', 0, 0, '2014-05-18 04:27:36');
-INSERT INTO `sys_user` VALUES (69, '傅安琪', '13013099881', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'b9WyKFv2GW', 'pcyOFlYMOv', 0, 0, '2022-12-01 15:07:58');
-INSERT INTO `sys_user` VALUES (70, '邹安琪', '15056282281', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'eb6MG95720', 'Vowar5z3Dg', 0, 0, '2026-03-17 02:57:10');
-INSERT INTO `sys_user` VALUES (71, '蒋岚', '15675903473', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'IFE8SCvuBW', 'kd01rOAUsT', 0, 0, '2009-07-04 15:00:25');
-INSERT INTO `sys_user` VALUES (72, '钱岚', '16649729732', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '2RKauhMsAj', '32gpna7umi', 0, 0, '2026-03-20 22:19:31');
-INSERT INTO `sys_user` VALUES (73, '曾秀英', '17286206069', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '7G0eIogdpo', 'uQvdIJu2aE', 0, 0, '2009-07-06 09:01:26');
-INSERT INTO `sys_user` VALUES (74, '陈宇宁', '16920686661', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '4S4Zpp7akc', 'UqwtAZezCh', 0, 0, '2010-08-06 16:38:26');
-INSERT INTO `sys_user` VALUES (75, '郑子异', '18861142882', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9SY9Tb8cMt', 'UWPsHGeAk8', 0, 0, '2006-04-24 10:23:17');
-INSERT INTO `sys_user` VALUES (76, '严震南', '16285748695', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'avaLaPTNUw', 'eppmOMznqL', 0, 0, '2025-11-16 18:44:08');
-INSERT INTO `sys_user` VALUES (77, '谢安琪', '17665601473', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'RV6EfAi4va', 'QbWjKlARcq', 0, 0, '2000-10-26 08:40:53');
-INSERT INTO `sys_user` VALUES (78, '叶云熙', '19621980293', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'pYFwuFLAt7', '7EF2ByFStB', 0, 0, '2009-12-15 22:00:13');
-INSERT INTO `sys_user` VALUES (79, '沈安琪', '16962096987', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'FEJ03jvXQ0', 'OTFV2AX4us', 0, 0, '2006-11-09 23:22:57');
-INSERT INTO `sys_user` VALUES (80, '江宇宁', '15751552063', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jzxiz2NyHU', 'pfGD22OrPe', 0, 0, '2007-05-29 04:22:24');
-INSERT INTO `sys_user` VALUES (81, '秦子异', '16619816764', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '3eXfERG23Q', 'eW85MJraww', 0, 0, '2001-07-14 21:33:17');
-INSERT INTO `sys_user` VALUES (82, '贺宇宁', '13369425252', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Kpl80NdQDV', 'ecRvNDjMOl', 0, 0, '2013-07-13 05:07:57');
-INSERT INTO `sys_user` VALUES (83, '熊晓明', '14726373986', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'RYrMkDca9Z', 'TwPyknzJRM', 0, 0, '2004-05-05 08:15:59');
-INSERT INTO `sys_user` VALUES (84, '蒋岚', '17487957963', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '6foWUTq4tR', 'OjLCpDMty9', 0, 0, '2002-04-22 00:22:03');
-INSERT INTO `sys_user` VALUES (85, '张睿', '15829789219', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'VjpoOn5W7O', 'kYBcdlGa5k', 0, 0, '2013-04-14 13:04:42');
-INSERT INTO `sys_user` VALUES (86, '邹杰宏', '16072145548', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'QzDpm3A43f', '996mAjD1RM', 0, 0, '2019-11-18 01:10:04');
-INSERT INTO `sys_user` VALUES (87, '范晓明', '17173624811', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'HaUSLA5ghw', 'gtcCqkYQ7z', 0, 0, '2016-01-23 00:28:53');
-INSERT INTO `sys_user` VALUES (88, '雷嘉伦', '19996000462', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'zCVKJ5BYkJ', 'm3rys6UQH1', 0, 0, '2017-07-25 12:09:58');
-INSERT INTO `sys_user` VALUES (89, '赵震南', '15468322682', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jUbq2Izqh6', 'rCZ4VgecQH', 0, 0, '2011-11-02 23:14:49');
-INSERT INTO `sys_user` VALUES (90, '邵致远', '16446899538', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'BKnpb9uEG9', 'QS5cGt2ZaJ', 0, 0, '2004-06-11 02:52:47');
-INSERT INTO `sys_user` VALUES (91, '侯宇宁', '14297231981', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Js0wvhIHqw', 'rQhdCrAxcr', 0, 0, '2025-07-13 18:38:55');
-INSERT INTO `sys_user` VALUES (92, '程子异', '13722801991', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'wjYC3vHk9u', 'U8U63EgyOe', 0, 0, '2005-02-07 06:51:59');
-INSERT INTO `sys_user` VALUES (93, '侯云熙', '18483735299', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9QKvRMGPiA', 'oB9FXcFEkM', 0, 0, '2025-10-07 05:54:49');
-INSERT INTO `sys_user` VALUES (94, '董睿', '13710944761', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'JmoHX7Weym', 'KrnVHAgvT3', 0, 0, '2018-10-30 07:40:46');
-INSERT INTO `sys_user` VALUES (95, '顾云熙', '14931232399', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'umZ4GjUyqi', 'j5AnlaZinh', 0, 0, '2001-10-28 11:12:37');
-INSERT INTO `sys_user` VALUES (96, '陈安琪', '15658725841', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jZu5SlNdHD', 'vMqZOeOVxE', 0, 0, '2015-06-07 18:31:43');
-INSERT INTO `sys_user` VALUES (97, '蔡子韬', '14125682905', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'NY6uTOJDG2', 'PIZ00Zcx8j', 0, 0, '2005-06-10 13:52:23');
-INSERT INTO `sys_user` VALUES (98, '彭云熙', '17289331402', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'tGlVRGsBrm', 'ISqxkA5fw5', 0, 0, '2019-04-01 18:22:53');
-INSERT INTO `sys_user` VALUES (99, '苏嘉伦', '19154706814', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Nk0as9X4d4', 'ZkGpSpBBhQ', 0, 0, '2017-12-29 06:25:18');
-INSERT INTO `sys_user` VALUES (100, '姜震南', '15143314208', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'V61qvTdE7D', 'wdDQ2UtEv9', 0, 0, '2024-10-21 16:30:06');
+INSERT INTO `sys_user` VALUES (1, '郝睿', '19028135411', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'vXqAma2Pqa', '5zodaJReTa', 1, 0, '2022-05-16 15:42:02', '南昌大学前湖校区2栋2室');
+INSERT INTO `sys_user` VALUES (2, '向致远', '14572081876', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'cjMgatpt7E', 'aEYTgRSnJV', 1, 0, '2006-11-30 08:29:04', '南昌大学前湖校区3栋3室');
+INSERT INTO `sys_user` VALUES (3, '武子韬', '15861176797', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'OCBRzL3C41', 'AR6hKR4t0i', 0, 0, '2022-03-22 10:08:02', '南昌大学前湖校区4栋4室');
+INSERT INTO `sys_user` VALUES (4, '宋岚', '14103924816', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'LZQhoQKx5G', 'IIt7do45O8', 0, 0, '2015-07-03 09:55:07', '南昌大学前湖校区5栋5室');
+INSERT INTO `sys_user` VALUES (5, '廖詩涵', '16924344849', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'DWAxCVdNrI', 'N39PZTcpCk', 0, 0, '2002-05-13 05:03:50', '南昌大学前湖校区6栋6室');
+INSERT INTO `sys_user` VALUES (6, '余安琪', '14330596984', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'rp9meDQGRE', 'qfCupzBDKy', 0, 0, '2024-01-05 16:23:07', '南昌大学前湖校区7栋7室');
+INSERT INTO `sys_user` VALUES (7, '戴云熙', '19256343272', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'ta2dLQtX5b', '5Rac659OFZ', 0, 0, '2025-07-23 06:06:28', '南昌大学前湖校区8栋8室');
+INSERT INTO `sys_user` VALUES (8, '石云熙', '18137578405', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9GkmVFiqpm', 'rIknPhX9Uz', 0, 0, '2011-09-20 12:05:44', '南昌大学前湖校区1栋9室');
+INSERT INTO `sys_user` VALUES (9, '崔云熙', '18955248839', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'yAwFZRpnbH', '8FE7B1s63o', 0, 0, '2001-12-27 02:46:08', '南昌大学前湖校区2栋10室');
+INSERT INTO `sys_user` VALUES (10, '龚子异', '16919068636', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'wDoIUctQPE', 'sujOQr3bW4', 0, 0, '2005-01-27 07:22:47', '南昌大学前湖校区3栋11室');
+INSERT INTO `sys_user` VALUES (11, '张子异', '13410657358', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'ZfyJEFHxP4', 'uMp6bWrcJl', 0, 0, '2005-06-18 11:47:56', '南昌大学前湖校区4栋12室');
+INSERT INTO `sys_user` VALUES (12, '陆云熙', '13116906669', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'OmScZ69Z4z', '8AtMuVtp5B', 0, 0, '2007-02-05 19:29:13', '南昌大学前湖校区5栋13室');
+INSERT INTO `sys_user` VALUES (13, '侯秀英', '16895763309', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'TpLpkCYxMa', 'bxjFpszFJ5', 0, 0, '2024-10-03 06:24:09', '南昌大学前湖校区6栋14室');
+INSERT INTO `sys_user` VALUES (14, '彭岚', '17623988031', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'YBhyf2Y6uX', 'nxSOLxJl2C', 0, 0, '2008-05-21 13:50:46', '南昌大学前湖校区7栋15室');
+INSERT INTO `sys_user` VALUES (15, '邓致远', '18364022995', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'QVTOctR7zD', 'fFUya5m4JK', 0, 0, '2001-10-31 10:00:22', '南昌大学前湖校区8栋16室');
+INSERT INTO `sys_user` VALUES (16, '苏宇宁', '19419828272', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'l64JS9EIwc', '1yV0jHQZmJ', 0, 0, '2004-06-16 18:30:49', '南昌大学前湖校区1栋17室');
+INSERT INTO `sys_user` VALUES (17, '汪云熙', '17940699052', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '7JEebdfGLY', 'O59dhfmSMv', 0, 0, '2017-12-31 07:30:23', '南昌大学前湖校区2栋18室');
+INSERT INTO `sys_user` VALUES (18, '钱宇宁', '17978205337', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'USulTEkaMt', '1owOP15rMZ', 0, 0, '2003-01-02 18:45:27', '南昌大学前湖校区3栋19室');
+INSERT INTO `sys_user` VALUES (19, '秦杰宏', '14071283361', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Y83REy9bbD', 'PTpxTsgVbD', 0, 0, '2011-06-08 03:29:42', '南昌大学前湖校区4栋20室');
+INSERT INTO `sys_user` VALUES (20, '许杰宏', '14857388565', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '26sVtjCCz8', 'NvvcPzDPZj', 0, 0, '2014-11-26 11:09:04', '南昌大学前湖校区5栋1室');
+INSERT INTO `sys_user` VALUES (21, '莫子韬', '16684392867', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'xzQUlk4Swk', 'ZoBPfljwDP', 0, 0, '2017-03-05 21:18:21', '南昌大学前湖校区6栋2室');
+INSERT INTO `sys_user` VALUES (22, '孔岚', '19581107903', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Ho9gFwWZ2M', 'E102VmPR9y', 0, 0, '2025-01-04 06:32:16', '南昌大学前湖校区7栋3室');
+INSERT INTO `sys_user` VALUES (23, '谢璐', '16920040895', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'JejqRhygnU', 'CaWUwodlAO', 0, 0, '2023-12-31 12:51:25', '南昌大学前湖校区8栋4室');
+INSERT INTO `sys_user` VALUES (24, '钟震南', '14472691284', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '7Zv6g5iGzC', 'ZuIS7DxQN9', 0, 0, '2017-12-01 21:11:26', '南昌大学前湖校区1栋5室');
+INSERT INTO `sys_user` VALUES (25, '邵秀英', '15628893378', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'UHe2FJUzUx', 'owNNVUlF3K', 0, 0, '2015-08-12 06:43:15', '南昌大学前湖校区2栋6室');
+INSERT INTO `sys_user` VALUES (26, '顾安琪', '17600117678', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'q39gjMzxRn', 'gkX5L3vejV', 0, 0, '2011-02-24 14:54:47', '南昌大学前湖校区3栋7室');
+INSERT INTO `sys_user` VALUES (27, '苏璐', '15259350289', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 's1QJztFjUv', 'ObKAFWeqyj', 0, 0, '2026-07-19 18:44:32', '南昌大学前湖校区4栋8室');
+INSERT INTO `sys_user` VALUES (28, '钟晓明', '16243631724', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9igherLQad', 'aiJK9drqlf', 0, 0, '2004-05-18 08:16:53', '南昌大学前湖校区5栋9室');
+INSERT INTO `sys_user` VALUES (29, '马詩涵', '16754469727', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'QrM4L1TrdB', 'JiuC0a2fXx', 0, 0, '2002-06-06 15:40:57', '南昌大学前湖校区6栋10室');
+INSERT INTO `sys_user` VALUES (30, '刘震南', '18490237100', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'pMwTjdwleL', 'xz2z2d35VR', 0, 0, '2021-06-06 22:25:14', '南昌大学前湖校区7栋11室');
+INSERT INTO `sys_user` VALUES (31, '陶睿', '18823985756', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'UDZnEU7fov', 'TKnxAfzN5n', 0, 0, '2004-04-26 23:10:10', '南昌大学前湖校区8栋12室');
+INSERT INTO `sys_user` VALUES (32, '董云熙', '13894278475', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '2YgHm2RGBt', 'MsKZkdjQaz', 0, 0, '2017-03-08 12:40:05', '南昌大学前湖校区1栋13室');
+INSERT INTO `sys_user` VALUES (33, '赵岚', '18913744650', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'qwOVrLKyNj', 'UPJ29vYx5C', 0, 0, '2005-12-27 08:30:16', '南昌大学前湖校区2栋14室');
+INSERT INTO `sys_user` VALUES (34, '薛致远', '16648826621', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'VYDkdi6Or6', 'DVJNFQC0LK', 0, 0, '2000-03-23 07:19:06', '南昌大学前湖校区3栋15室');
+INSERT INTO `sys_user` VALUES (35, '邱致远', '14670549845', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'wKyqiEbK0V', 'eELeqfpcAx', 0, 0, '2020-08-01 01:42:00', '南昌大学前湖校区4栋16室');
+INSERT INTO `sys_user` VALUES (36, '常璐', '19213131977', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'PzKUdsdDq2', 'nyvLYFLJ0j', 0, 0, '2001-02-22 10:25:04', '南昌大学前湖校区5栋17室');
+INSERT INTO `sys_user` VALUES (37, '阎致远', '18343472150', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'b8EbhyxcxM', '8ummozcCrf', 0, 0, '2024-03-08 21:31:38', '南昌大学前湖校区6栋18室');
+INSERT INTO `sys_user` VALUES (38, '金安琪', '18367938811', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'fkhsJzC1gK', 'OWFW5Hjb69', 0, 0, '2016-09-18 01:40:35', '南昌大学前湖校区7栋19室');
+INSERT INTO `sys_user` VALUES (39, '顾睿', '19382537069', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'SWKPz7JbXT', 'rOWDguTCc1', 0, 0, '2009-02-18 16:48:16', '南昌大学前湖校区8栋20室');
+INSERT INTO `sys_user` VALUES (40, '董云熙', '19678909146', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'BFP4Frszwh', 'EIJWiyeIDW', 0, 0, '2002-02-16 18:41:50', '南昌大学前湖校区1栋1室');
+INSERT INTO `sys_user` VALUES (41, '江睿', '19029274749', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '6QPPorOdno', 'Do6jxqStYg', 0, 0, '2001-09-13 08:21:45', '南昌大学前湖校区2栋2室');
+INSERT INTO `sys_user` VALUES (42, '严震南', '14588666944', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'As6fajDopJ', 'VY3seixTHs', 0, 0, '2011-08-25 22:02:56', '南昌大学前湖校区3栋3室');
+INSERT INTO `sys_user` VALUES (43, '彭杰宏', '16883557028', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'R34ZYbVGZ0', 'yjkC488AHW', 0, 0, '2005-07-16 14:43:31', '南昌大学前湖校区4栋4室');
+INSERT INTO `sys_user` VALUES (44, '田璐', '19830483456', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9o4sLXA8rO', 'wmDWblVQRV', 0, 0, '2017-05-23 21:00:18', '南昌大学前湖校区5栋5室');
+INSERT INTO `sys_user` VALUES (45, '邵岚', '16706898751', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'zCOSePa5ZF', 'JWfYmx9oKq', 0, 0, '2021-10-15 15:31:46', '南昌大学前湖校区6栋6室');
+INSERT INTO `sys_user` VALUES (46, '丁晓明', '18898589477', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'IUvxqgHxyf', 'HYb8G4dAYv', 0, 0, '2000-11-26 00:26:37', '南昌大学前湖校区7栋7室');
+INSERT INTO `sys_user` VALUES (47, '苏璐', '19682844546', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'NysjvBPqYU', 'bXgReYI0KV', 0, 0, '2002-08-26 11:25:56', '南昌大学前湖校区8栋8室');
+INSERT INTO `sys_user` VALUES (48, '陈杰宏', '19213198826', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'lSIJCQJpQQ', 'mAxBLtWsDR', 0, 0, '2008-10-25 10:53:08', '南昌大学前湖校区1栋9室');
+INSERT INTO `sys_user` VALUES (49, '江杰宏', '17848972002', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '5KuxJBaOc8', '7CPkMn5uLw', 0, 0, '2018-05-27 00:56:19', '南昌大学前湖校区2栋10室');
+INSERT INTO `sys_user` VALUES (50, '孔詩涵', '15007659658', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'BfYAojcqmM', 'rurDDfXSE1', 0, 0, '2003-10-26 10:34:18', '南昌大学前湖校区3栋11室');
+INSERT INTO `sys_user` VALUES (51, '贺安琪', '17771790008', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'sBPb1wPq1c', '7vMrwZGOsg', 0, 0, '2015-03-07 12:17:03', '南昌大学前湖校区4栋12室');
+INSERT INTO `sys_user` VALUES (52, '高杰宏', '16278230591', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jPyZXLUGh5', 'WgFs1JRH4p', 0, 0, '2012-02-29 18:19:13', '南昌大学前湖校区5栋13室');
+INSERT INTO `sys_user` VALUES (53, '邱詩涵', '18898109323', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'ASDCWYT9yV', '0NXRzjGHol', 0, 0, '2013-06-18 04:34:31', '南昌大学前湖校区6栋14室');
+INSERT INTO `sys_user` VALUES (54, '蔡安琪', '19450181170', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'sMivOJi4yw', 'FqM4T6P2IT', 0, 0, '2008-07-04 09:00:45', '南昌大学前湖校区7栋15室');
+INSERT INTO `sys_user` VALUES (55, '程晓明', '17374111023', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'lVClCN8WsQ', 'sRPUjE5gWg', 0, 0, '2008-09-19 19:26:56', '南昌大学前湖校区8栋16室');
+INSERT INTO `sys_user` VALUES (56, '廖致远', '16125937207', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'tCUUPJoVy4', 'tTayrzOD08', 0, 0, '2020-03-22 03:06:26', '南昌大学前湖校区1栋17室');
+INSERT INTO `sys_user` VALUES (57, '向睿', '19654261451', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'F038u2FsII', 'A6NrnB33f8', 0, 0, '2025-05-16 08:52:18', '南昌大学前湖校区2栋18室');
+INSERT INTO `sys_user` VALUES (58, '邱晓明', '15009504299', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Q8Zrn3FfnT', 'sar3Toz6WT', 0, 0, '2003-12-17 06:14:26', '南昌大学前湖校区3栋19室');
+INSERT INTO `sys_user` VALUES (59, '田秀英', '14513147210', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'h1llcGxOUl', 'zKBSsRzS2H', 0, 0, '2016-04-12 04:53:43', '南昌大学前湖校区4栋20室');
+INSERT INTO `sys_user` VALUES (60, '武詩涵', '17543818779', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jkk5qZFuGu', 'Mu0RGnIylo', 0, 0, '2020-05-20 05:13:40', '南昌大学前湖校区5栋1室');
+INSERT INTO `sys_user` VALUES (61, '史岚', '17049030582', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '3jDNTZLPVY', 'l7IcWX6Gsy', 0, 0, '2015-06-07 07:54:48', '南昌大学前湖校区6栋2室');
+INSERT INTO `sys_user` VALUES (62, '赵致远', '13843093227', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '3y95nyteuv', 'yoApmaWZvT', 0, 0, '2018-12-04 07:33:51', '南昌大学前湖校区7栋3室');
+INSERT INTO `sys_user` VALUES (63, '汪宇宁', '15665739800', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'BwnPyTwRbc', 'm4ZJi5hK4l', 0, 0, '2007-12-19 17:47:02', '南昌大学前湖校区8栋4室');
+INSERT INTO `sys_user` VALUES (64, '武致远', '15520660973', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'K5vE5tAWLC', 'i8qKwQpyhT', 0, 0, '2015-03-04 01:30:10', '南昌大学前湖校区1栋5室');
+INSERT INTO `sys_user` VALUES (65, '胡璐', '16880156182', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0idqCrSZWc', 'EIG20f8U33', 0, 0, '2011-05-27 22:06:48', '南昌大学前湖校区2栋6室');
+INSERT INTO `sys_user` VALUES (66, '吴安琪', '18126984592', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Vcd4z0MBB2', 'Z4egKNUoOF', 0, 0, '2024-05-28 07:55:08', '南昌大学前湖校区3栋7室');
+INSERT INTO `sys_user` VALUES (67, '史安琪', '14342191694', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '20pCIeZBnU', 'wyi4RspcdT', 0, 0, '2000-06-16 15:49:31', '南昌大学前湖校区4栋8室');
+INSERT INTO `sys_user` VALUES (68, '尹睿', '17641458790', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'VXr8o3S4PW', 'AxQGROMq8A', 0, 0, '2014-05-18 04:27:36', '南昌大学前湖校区5栋9室');
+INSERT INTO `sys_user` VALUES (69, '傅安琪', '13013099881', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'b9WyKFv2GW', 'pcyOFlYMOv', 0, 0, '2022-12-01 15:07:58', '南昌大学前湖校区6栋10室');
+INSERT INTO `sys_user` VALUES (70, '邹安琪', '15056282281', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'eb6MG95720', 'Vowar5z3Dg', 0, 0, '2026-03-17 02:57:10', '南昌大学前湖校区7栋11室');
+INSERT INTO `sys_user` VALUES (71, '蒋岚', '15675903473', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'IFE8SCvuBW', 'kd01rOAUsT', 0, 0, '2009-07-04 15:00:25', '南昌大学前湖校区8栋12室');
+INSERT INTO `sys_user` VALUES (72, '钱岚', '16649729732', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '2RKauhMsAj', '32gpna7umi', 0, 0, '2026-03-20 22:19:31', '南昌大学前湖校区1栋13室');
+INSERT INTO `sys_user` VALUES (73, '曾秀英', '17286206069', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '7G0eIogdpo', 'uQvdIJu2aE', 0, 0, '2009-07-06 09:01:26', '南昌大学前湖校区2栋14室');
+INSERT INTO `sys_user` VALUES (74, '陈宇宁', '16920686661', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '4S4Zpp7akc', 'UqwtAZezCh', 0, 0, '2010-08-06 16:38:26', '南昌大学前湖校区3栋15室');
+INSERT INTO `sys_user` VALUES (75, '郑子异', '18861142882', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9SY9Tb8cMt', 'UWPsHGeAk8', 0, 0, '2006-04-24 10:23:17', '南昌大学前湖校区4栋16室');
+INSERT INTO `sys_user` VALUES (76, '严震南', '16285748695', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'avaLaPTNUw', 'eppmOMznqL', 0, 0, '2025-11-16 18:44:08', '南昌大学前湖校区5栋17室');
+INSERT INTO `sys_user` VALUES (77, '谢安琪', '17665601473', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'RV6EfAi4va', 'QbWjKlARcq', 0, 0, '2000-10-26 08:40:53', '南昌大学前湖校区6栋18室');
+INSERT INTO `sys_user` VALUES (78, '叶云熙', '19621980293', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'pYFwuFLAt7', '7EF2ByFStB', 0, 0, '2009-12-15 22:00:13', '南昌大学前湖校区7栋19室');
+INSERT INTO `sys_user` VALUES (79, '沈安琪', '16962096987', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'FEJ03jvXQ0', 'OTFV2AX4us', 0, 0, '2006-11-09 23:22:57', '南昌大学前湖校区8栋20室');
+INSERT INTO `sys_user` VALUES (80, '江宇宁', '15751552063', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jzxiz2NyHU', 'pfGD22OrPe', 0, 0, '2007-05-29 04:22:24', '南昌大学前湖校区1栋1室');
+INSERT INTO `sys_user` VALUES (81, '秦子异', '16619816764', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '3eXfERG23Q', 'eW85MJraww', 0, 0, '2001-07-14 21:33:17', '南昌大学前湖校区2栋2室');
+INSERT INTO `sys_user` VALUES (82, '贺宇宁', '13369425252', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Kpl80NdQDV', 'ecRvNDjMOl', 0, 0, '2013-07-13 05:07:57', '南昌大学前湖校区3栋3室');
+INSERT INTO `sys_user` VALUES (83, '熊晓明', '14726373986', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'RYrMkDca9Z', 'TwPyknzJRM', 0, 0, '2004-05-05 08:15:59', '南昌大学前湖校区4栋4室');
+INSERT INTO `sys_user` VALUES (84, '蒋岚', '17487957963', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '6foWUTq4tR', 'OjLCpDMty9', 0, 0, '2002-04-22 00:22:03', '南昌大学前湖校区5栋5室');
+INSERT INTO `sys_user` VALUES (85, '张睿', '15829789219', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'VjpoOn5W7O', 'kYBcdlGa5k', 0, 0, '2013-04-14 13:04:42', '南昌大学前湖校区6栋6室');
+INSERT INTO `sys_user` VALUES (86, '邹杰宏', '16072145548', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'QzDpm3A43f', '996mAjD1RM', 0, 0, '2019-11-18 01:10:04', '南昌大学前湖校区7栋7室');
+INSERT INTO `sys_user` VALUES (87, '范晓明', '17173624811', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'HaUSLA5ghw', 'gtcCqkYQ7z', 0, 0, '2016-01-23 00:28:53', '南昌大学前湖校区8栋8室');
+INSERT INTO `sys_user` VALUES (88, '雷嘉伦', '19996000462', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'zCVKJ5BYkJ', 'm3rys6UQH1', 0, 0, '2017-07-25 12:09:58', '南昌大学前湖校区1栋9室');
+INSERT INTO `sys_user` VALUES (89, '赵震南', '15468322682', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jUbq2Izqh6', 'rCZ4VgecQH', 0, 0, '2011-11-02 23:14:49', '南昌大学前湖校区2栋10室');
+INSERT INTO `sys_user` VALUES (90, '邵致远', '16446899538', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'BKnpb9uEG9', 'QS5cGt2ZaJ', 0, 0, '2004-06-11 02:52:47', '南昌大学前湖校区3栋11室');
+INSERT INTO `sys_user` VALUES (91, '侯宇宁', '14297231981', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Js0wvhIHqw', 'rQhdCrAxcr', 0, 0, '2025-07-13 18:38:55', '南昌大学前湖校区4栋12室');
+INSERT INTO `sys_user` VALUES (92, '程子异', '13722801991', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'wjYC3vHk9u', 'U8U63EgyOe', 0, 0, '2005-02-07 06:51:59', '南昌大学前湖校区5栋13室');
+INSERT INTO `sys_user` VALUES (93, '侯云熙', '18483735299', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '9QKvRMGPiA', 'oB9FXcFEkM', 0, 0, '2025-10-07 05:54:49', '南昌大学前湖校区6栋14室');
+INSERT INTO `sys_user` VALUES (94, '董睿', '13710944761', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'JmoHX7Weym', 'KrnVHAgvT3', 0, 0, '2018-10-30 07:40:46', '南昌大学前湖校区7栋15室');
+INSERT INTO `sys_user` VALUES (95, '顾云熙', '14931232399', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'umZ4GjUyqi', 'j5AnlaZinh', 0, 0, '2001-10-28 11:12:37', '南昌大学前湖校区8栋16室');
+INSERT INTO `sys_user` VALUES (96, '陈安琪', '15658725841', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'jZu5SlNdHD', 'vMqZOeOVxE', 0, 0, '2015-06-07 18:31:43', '南昌大学前湖校区1栋17室');
+INSERT INTO `sys_user` VALUES (97, '蔡子韬', '14125682905', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'NY6uTOJDG2', 'PIZ00Zcx8j', 0, 0, '2005-06-10 13:52:23', '南昌大学前湖校区2栋18室');
+INSERT INTO `sys_user` VALUES (98, '彭云熙', '17289331402', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'tGlVRGsBrm', 'ISqxkA5fw5', 0, 0, '2019-04-01 18:22:53', '南昌大学前湖校区3栋19室');
+INSERT INTO `sys_user` VALUES (99, '苏嘉伦', '19154706814', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'Nk0as9X4d4', 'ZkGpSpBBhQ', 0, 0, '2017-12-29 06:25:18', '南昌大学前湖校区4栋20室');
+INSERT INTO `sys_user` VALUES (100, '姜震南', '15143314208', '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', 'V61qvTdE7D', 'wdDQ2UtEv9', 0, 0, '2024-10-21 16:30:06', '南昌大学前湖校区5栋1室');
 
 -- ----------------------------
 -- Triggers structure for table evaluate
