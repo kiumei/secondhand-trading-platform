@@ -38,8 +38,12 @@ public class CommunicationService {
     }
     @Transactional
     public Report report(String user, ReportInput input) {
-        throw new com.campus.secondhand.common.BusinessException(org.springframework.http.HttpStatus.CONFLICT,
-                "REPORT_GOODS_UNAVAILABLE", "举报表尚缺少商品编号，暂不能提交商品举报");
+        require(input.reportType() != null && input.reportType().matches("[1-5]"), "举报类型必须为1至5");
+        found(db.goods(input.goodsId()));
+        var row = new Report(null, user, input.goodsId(), input.reportType(), input.reportContent(), input.proofImg(), 0, null);
+        var key = new com.campus.secondhand.common.GeneratedId();
+        changed(db.insertReport(row, key));
+        return new Report(key.getId(), user, row.goodsId(), row.reportType(), row.reportContent(), row.proofImg(), 0, null);
     }
 
     public PageResult<Report> reports(String user, Integer status, PageQuery page) {

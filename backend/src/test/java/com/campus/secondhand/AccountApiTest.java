@@ -143,17 +143,17 @@ class AccountApiTest {
         var session = (MockHttpSession) login.getRequest().getSession(false);
         var csrf = mvc.perform(get("/api/auth/csrf").session(session)).andReturn();
         String token = json.readTree(csrf.getResponse().getContentAsString()).at("/data/token").asText();
-        when(users.updateProfile("student-id", "新昵称", null, "")).thenReturn(1);
+        when(users.updateProfile("student-id", "新昵称", null, "", null)).thenReturn(1);
         mvc.perform(patch("/api/users/me").session(session).header("X-CSRF-TOKEN", token)
                 .contentType("application/json").content("""
                     {"userName":"新昵称","intro":"","userId":"victim","role":1,"phone":"changed"}
                     """))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.role").value(0));
-        verify(users).updateProfile("student-id", "新昵称", null, "");
+        verify(users).updateProfile("student-id", "新昵称", null, "", null);
         mvc.perform(patch("/api/users/me").session(session).header("X-CSRF-TOKEN", token)
                 .contentType("application/json").content("{\"userName\":\" \"}"))
                 .andExpect(status().isBadRequest());
-        verify(users, times(1)).updateProfile(any(), any(), any(), any());
+        verify(users, times(1)).updateProfile(any(), any(), any(), any(), any());
     }
 
     @TestConfiguration

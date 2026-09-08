@@ -1,6 +1,6 @@
 # 后端与 DBA 交接
 
-2026-09-08：以 `db/secondhand_full.sql` 为当前基线，后端不修改 DDL 和原始数据；真实数据库联调由 DBA 负责。图片表建议和已发现的字段差异见 [协作对接](../backend/integration-notes.md)。下方约定已同步本轮代码。
+2026-09-08：以 `db/secondhand_full.sql` 为当前基线，后端不修改 DDL 和原始数据；真实数据库联调由 DBA 负责。当前字段映射和图片对接方式见 [协作对接](../backend/integration-notes.md)。下方约定已同步本轮代码。
 
 ## 职责与交付建议
 
@@ -16,7 +16,7 @@
 
 ## 数据基础建议
 
-沿用文档中的 MySQL 8.0、InnoDB、utf8mb4。表名采用 sys_user、category、goods、orders、evaluate、message、report，字段名和长度优先遵循 Word 数据字典。
+沿用文档中的 MySQL 8.0、InnoDB、utf8mb4。表名采用 sys_user、category、goods、goods_image、favorite、orders、evaluate、message、report，字段名和长度以当前完整 SQL 为准。
 
 | 约定项 | 建议做法 |
 | --- | --- |
@@ -29,7 +29,11 @@
 | 评价关联 | 采用当前 evaluate.order_id，通过订单联查商品和买家 |
 | 订单状态 | 沿用 PDM：0待付款、1待发货、2待收货、3完成、4取消、5售后；第一版不开放售后操作 |
 
-订单支付和完成同步当前表的 pay_status、pay_time、finish_time。独立图片上传已实现；建议 DBA 补充 goods_image 表，具体结构由 DBA 确定，本轮后端没有创建表。
+订单支付和完成同步当前表的 pay_status、pay_time、finish_time。图片上传和 goods_image 关联保存已实现，最多4张，按 sort_order、img_id 排序。后端没有创建表。
+
+sys_user.role 为0普通用户、1管理员；status 为0正常、1封禁。后端登录和会话检查执行封禁限制。address 已接入个人资料读写，最长255字符，未扩展订单地址快照。
+
+report 已读写 goods_id；report_type 限定1至5，依次为假冒伪劣、欺诈行为、辱骂骚扰、违规违禁品、其他；handle_status 为0待处理、1已处理。
 
 密码用 BCrypt 哈希保存，不保存明文。后端提供匹配所用 PasswordEncoder 格式的哈希；若使用带算法前缀的编码格式，再检查字段长度是否足够。
 
@@ -59,8 +63,12 @@ DBA 提供 MySQL 实际版本、主机、端口、数据库名、字符集和排
 
 ## 触发器交接
 
-当前提供的 SQL 没有触发器定义，后端继续负责订单和商品关联更新。
+当前 db/secondhand_full.sql 已包含三个触发器：
 
-按当前分工，等 DBA 完成数据库后，以实际触发器定义为准衔接后端；未定义的触发器不由后端自行新增。若存在触发器，接入时需了解触发的表和事件、关联更新与错误条件。
+- trg_order_complete_update_goods：订单变为3完成时，将商品改为3已售出。后端仅更新订单状态和完成时间，不重复更新商品。
+- trg_user_ban_off_goods：用户变为1封禁时，将其状态0/1的商品改为2下架。后端不重复下架。
+- trg_prevent_unfinished_evaluate：拒绝非已完成订单的评价。后端仍提前检查订单完成状态和买家归属。
+
+订单状态更新和触发器商品更新属于同一数据库事务。实际触发效果与回滚由 DBA 在真实 MySQL 环境验证；后端自动化测试不替代该验证。
 
 若触发器负责某项关联更新，后端应避免重复执行同一更新；Service 仍负责请求权限和业务流程。上文所述事务更新方案以实际触发器行为为准，接入后验证回滚效果。

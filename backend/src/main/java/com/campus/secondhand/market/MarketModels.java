@@ -54,7 +54,7 @@ public final class MarketModels {
     public record Report(String reportId, String reportUserId, String goodsId, String reportType,
             String reportContent, String proofImg, int handleStatus, String handleResult) { }
     public record ReportInput(@NotBlank @Size(max = 32) String goodsId,
-            @NotBlank @Pattern(regexp = "[0-9]{1,4}") String reportType, @NotBlank @Size(max = 500) String reportContent,
+            @NotBlank @Pattern(regexp = "[1-5]") String reportType, @NotBlank @Size(max = 500) String reportContent,
             @Size(max = 255) String proofImg) { }
     public record HandleInput(@NotBlank @Size(max = 200) String handleResult) { }
     public record CategoryInput(@NotBlank @Size(max = 50) String cateName, @Size(max = 255) String cateDesc,

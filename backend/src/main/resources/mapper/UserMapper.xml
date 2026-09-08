@@ -12,9 +12,10 @@
       <arg column="user_role" javaType="_int"/>
       <arg column="register_time" javaType="java.time.LocalDateTime"/>
       <arg column="status" javaType="_int"/>
+      <arg column="address" javaType="java.lang.String"/>
     </constructor>
   </resultMap>
-  <sql id="columns">user_id, user_name, password, phone, avatar, intro, role AS user_role, register_time, status</sql>
+  <sql id="columns">user_id, user_name, password, phone, avatar, intro, role AS user_role, register_time, status, address</sql>
   <select id="findByPhone" resultMap="user">
     SELECT <include refid="columns"/> FROM sys_user WHERE phone = #{phone}
   </select>
@@ -31,6 +32,7 @@
       <if test="userName != null">user_name = #{userName},</if>
       <if test="avatar != null">avatar = #{avatar},</if>
       <if test="intro != null">intro = #{intro},</if>
+      <if test="address != null">address = #{address},</if>
     </set>
     WHERE user_id = #{userId}
   </update>

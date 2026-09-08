@@ -27,7 +27,7 @@ public class AccountSessionFilter extends OncePerRequestFilter {
                 json.writeValue(response.getOutputStream(), ApiResponse.error("SERVICE_UNAVAILABLE", "服务暂时不可用"));
                 return;
             }
-            if (row == null || !AccountService.credentialVersion(row).equals(principal.credentialVersion())) {
+            if (row == null || row.status() != 0 || !AccountService.credentialVersion(row).equals(principal.credentialVersion())) {
                 SecurityContextHolder.clearContext();
                 var session = request.getSession(false);
                 if (session != null) { session.invalidate(); }

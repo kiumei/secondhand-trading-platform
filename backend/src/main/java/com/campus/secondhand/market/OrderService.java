@@ -53,8 +53,7 @@ public class OrderService {
         state(order.orderStatus() == from, "订单当前状态不允许此操作");
         state(item.goodsStatus() == 1, "商品状态与订单不一致");
         changed(db.orderStatus(id, from, to));
-        // 暂由后端事务负责，若 DBA 的触发器负责此更新，联调时替换此处。
-        if (to == 3) { changed(db.goodsStatus(item.goodsId(), 1, 3, null)); }
+        // 商品已售出状态由 trg_order_complete_update_goods 在同一事务内更新。
         return new Order(order.orderId(), order.buyerId(), order.sellerId(), order.goodsId(),
                 order.orderPrice(), to, order.createTime());
     }

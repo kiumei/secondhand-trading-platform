@@ -166,13 +166,14 @@ class MarketServiceTest {
         assertThat(orders.detail("o", "buyer").orderId()).isEqualTo("o");
         assertThat(orders.detail("o", "seller").orderId()).isEqualTo("o");
     }
-    @Test void completionChangesBothRecordsInDefinedOrder() {
+    @Test void completionLeavesGoodsUpdateToDatabaseTrigger() {
         when(db.order("o")).thenReturn(order(2)); when(db.lockOrder("o")).thenReturn(order(2));
-        when(db.orderStatus("o", 2, 3)).thenReturn(1); when(db.goodsStatus("g", 1, 3, null)).thenReturn(1);
+        when(db.orderStatus("o", 2, 3)).thenReturn(1);
         assertThat(orders.action("o", "buyer", "complete").orderStatus()).isEqualTo(3);
         var sequence = inOrder(db);
         sequence.verify(db).order("o"); sequence.verify(db).lockGoods("g"); sequence.verify(db).lockOrder("o");
-        sequence.verify(db).orderStatus("o", 2, 3); sequence.verify(db).goodsStatus("g", 1, 3, null);
+        sequence.verify(db).orderStatus("o", 2, 3);
+        verify(db, never()).goodsStatus(any(), anyInt(), anyInt(), any());
     }
     @Test void paymentDeliveryAndCancellationEnforceActorAndOldState() {
         assertThatThrownBy(() -> orders.action("o", "seller", "mock-pay")).isInstanceOf(BusinessException.class);
@@ -217,8 +218,15 @@ class MarketServiceTest {
         verify(db).messages("me", "peer", 0, 10); verify(db).messageCount("me", "peer");
     }
     @Test void reportCannotSilentlyLoseGoodsAssociation() {
-        assertThatThrownBy(() -> communication.report("buyer", new ReportInput("g", "1", "原因", null)))
-                .isInstanceOf(BusinessException.class).hasMessageContaining("商品编号");
-        verify(db, never()).insertReport(any(), any());
+        when(db.insertReport(any(), any())).thenAnswer(call -> {
+            ((com.campus.secondhand.common.GeneratedId) call.getArgument(1)).setId("12");
+            return 1;
+        });
+        var report = communication.report("buyer", new ReportInput("g", "1", "原因", null));
+        assertThat(report.goodsId()).isEqualTo("g");
+        assertThat(report.reportId()).isEqualTo("12");
+        verify(db).insertReport(argThat(row -> row.goodsId().equals("g") && row.reportUserId().equals("buyer")), any());
+        assertThatThrownBy(() -> communication.report("buyer", new ReportInput("g", "0", "原因", null)))
+                .isInstanceOf(BusinessException.class);
     }
 }
