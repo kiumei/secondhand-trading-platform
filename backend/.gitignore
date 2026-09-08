@@ -1,0 +1,6 @@
+/target/
+/.m2/
+/.idea/
+*.iml
+.env
+application-local-private.yml
