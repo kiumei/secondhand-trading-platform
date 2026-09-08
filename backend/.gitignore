@@ -1,6 +1,8 @@
 /target/
+/uploads/
 /.m2/
 /.idea/
 *.iml
 .env
 application-local-private.yml
+/fallback-backup/

@@ -39,7 +39,7 @@ public class AccountController {
             HttpServletRequest request, HttpServletResponse response) {
         var user = accounts.authenticate(input.phone(), input.password());
         var authentication = UsernamePasswordAuthenticationToken.authenticated(
-                new AccountService.Principal(user.userId()), null,
+                new AccountService.Principal(user.userId(), AccountService.credentialVersion(user)), null,
                 List.of(new SimpleGrantedAuthority(user.userRole() == 1 ? "ROLE_ADMIN" : "ROLE_STUDENT")));
         new ChangeSessionIdAuthenticationStrategy().onAuthentication(authentication, request, response);
         new CsrfAuthenticationStrategy(new HttpSessionCsrfTokenRepository())
@@ -59,9 +59,9 @@ public class AccountController {
         return ApiResponse.success(accounts.current(principal.userId()));
     }
 
-    public record RegisterRequest(@NotBlank @Size(max = 20) String phone,
-            @NotBlank @Size(max = 72) String password, @NotBlank @Size(max = 50) String userName) { }
-    public record LoginRequest(@NotBlank @Size(max = 20) String phone,
+    public record RegisterRequest(@NotBlank @Size(max = 11) String phone,
+            @NotBlank @Size(max = 72) String password, @NotBlank @Size(max = 20) String userName) { }
+    public record LoginRequest(@NotBlank @Size(max = 11) String phone,
             @NotBlank @Size(max = 72) String password) { }
 
     @PatchMapping("/api/users/me")
@@ -70,6 +70,20 @@ public class AccountController {
                 body.userName(), body.avatar(), body.intro()));
     }
 
-    public record ProfileRequest(@Size(max = 50) String userName,
-            @Size(max = 255) String avatar, @Size(max = 255) String intro) { }
+    @PutMapping("/api/users/me/password")
+    public ApiResponse<Void> password(Authentication auth, @Valid @RequestBody PasswordRequest body) {
+        accounts.changePassword(com.campus.secondhand.common.CurrentUser.id(auth), body.oldPassword(), body.newPassword());
+        return ApiResponse.success(null);
+    }
+    public record PasswordRequest(@NotBlank @Size(max = 72) String oldPassword,
+            @NotBlank @Size(max = 72) String newPassword) { }
+    @PutMapping("/api/admin/users/{id}/password")
+    public ApiResponse<Void> resetPassword(@PathVariable String id, @Valid @RequestBody ResetPasswordRequest body) {
+        accounts.resetPassword(id, body.newPassword());
+        return ApiResponse.success(null);
+    }
+    public record ResetPasswordRequest(@NotBlank @Size(max = 72) String newPassword) { }
+
+    public record ProfileRequest(@Size(max = 20) String userName,
+            @Size(max = 255) String avatar, @Size(max = 200) String intro) { }
 }

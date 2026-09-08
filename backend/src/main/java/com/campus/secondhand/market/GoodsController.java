@@ -18,8 +18,9 @@ public class GoodsController {
     @GetMapping("/api/goods")
     public ApiResponse<PageResult<Goods>> list(@Valid @ModelAttribute PageQuery page,
             @RequestParam(required = false) String keyword, @RequestParam(required = false) String categoryId,
-            @RequestParam(required = false) BigDecimal minPrice, @RequestParam(required = false) BigDecimal maxPrice) {
-        return ApiResponse.success(goods.list(page, keyword, categoryId, minPrice, maxPrice, null, 0, false));
+            @RequestParam(required = false) BigDecimal minPrice, @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String sellerId) {
+        return ApiResponse.success(goods.list(page, keyword, categoryId, minPrice, maxPrice, sellerId, 1, false));
     }
     @GetMapping("/api/goods/{id}")
     public ApiResponse<Goods> detail(@PathVariable String id, Authentication auth) {
@@ -47,7 +48,7 @@ public class GoodsController {
     }
     @GetMapping("/api/admin/goods")
     public ApiResponse<PageResult<Goods>> pending(@Valid @ModelAttribute PageQuery page,
-            @RequestParam(defaultValue = "3") Integer status) {
+            @RequestParam(required = false) Integer status) {
         return ApiResponse.success(goods.list(page, null, null, null, null, null, status, true));
     }
     @PostMapping("/api/admin/goods/{id}/review")

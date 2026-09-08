@@ -157,7 +157,7 @@
     },
     {
       "key": "reportType",
-      "value": "",
+      "value": "1",
       "type": "string"
     },
     {
@@ -167,6 +167,21 @@
     },
     {
       "key": "handleResult",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "oldPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "newPassword",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "uploadedImageUrl",
       "value": "",
       "type": "string"
     }
@@ -602,7 +617,7 @@
             "description": "仅在需要新增分类时执行；返回 ID 写入 categoryId。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cateName\": \"{{categoryName}}\",\n  \"cateDesc\": \"{{categoryDescription}}\"\n}",
+              "raw": "{\n  \"cateName\": \"{{categoryName}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -649,7 +664,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cateName\": \"{{categoryName}}\",\n  \"cateDesc\": \"{{categoryDescription}}\"\n}",
+              "raw": "{\n  \"cateName\": \"{{categoryName}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -985,7 +1000,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/api/admin/goods?status=3&page=1&pageSize=10",
+            "url": "{{baseUrl}}/api/admin/goods?status=0&page=1&pageSize=10",
             "description": ""
           },
           "event": [
@@ -1055,16 +1070,29 @@
           "request": {
             "method": "PUT",
             "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "{{csrfHeader}}", "value": "{{csrfToken}}" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "{{csrfHeader}}",
+                "value": "{{csrfToken}}"
+              }
             ],
             "url": "{{baseUrl}}/api/admin/goods/{{goodsId}}",
             "description": "系统设计要求管理员可在审核前修改、补充商品；仅待审核状态可执行。",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"categoryId\": \"{{categoryId}}\",\n  \"title\": \"{{goodsTitle}}\",\n  \"sellPrice\": \"{{sellPrice}}\",\n  \"tradeType\": 2,\n  \"goodsDesc\": \"{{goodsDescription}}\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -1532,7 +1560,10 @@
           "request": {
             "method": "GET",
             "header": [
-              { "key": "Accept", "value": "application/json" }
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
             ],
             "url": "{{baseUrl}}/api/users/me/evaluations?page=1&pageSize=10",
             "description": "只返回当前登录用户提交的评价。"
@@ -1686,7 +1717,7 @@
       "name": "07 举报",
       "item": [
         {
-          "name": "用户提交举报",
+          "name": "商品举报（暂不可用：验证缺少商品关联提示）",
           "request": {
             "method": "POST",
             "header": [
@@ -1721,12 +1752,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) {",
-                  "  const response = pm.response.json();",
-                  "  pm.test(\"统一响应 OK\", function () { pm.expect(response.code).to.eql(\"OK\"); });",
-                  "  if (response.data && response.data.reportId != null) pm.collectionVariables.set(\"reportId\", response.data.reportId);",
-                  "}"
+                  "pm.test(\"举报待数据库补充\", () => { pm.response.to.have.status(409); pm.expect(pm.response.json().code).to.eql(\"REPORT_GOODS_UNAVAILABLE\"); });"
                 ]
               }
             }
@@ -1831,6 +1857,192 @@
                   "  const response = pm.response.json();",
                   "  pm.test(\"统一响应 OK\", function () { pm.expect(response.code).to.eql(\"OK\"); });",
                   "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "协作新增接口",
+      "item": [
+        {
+          "name": "公开卖家资料",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/public/users/{{sellerId}}",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "管理员用户列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/users",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "管理员订单列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/orders",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "管理员评价列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/evaluations",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "本人全部私信",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users/me/messages",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "修改本人密码",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/users/me/password",
+            "header": [
+              {
+                "key": "{{csrfHeader}}",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"{{oldPassword}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "图片上传（仅保存文件）",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/uploads/images",
+            "header": [
+              {
+                "key": "{{csrfHeader}}",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": null
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"uploadedImageUrl\", pm.response.json().data.url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "访问已上传图片",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}{{uploadedImageUrl}}",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
                 ]
               }
             }

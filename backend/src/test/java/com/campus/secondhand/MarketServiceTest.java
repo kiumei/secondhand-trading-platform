@@ -26,7 +26,7 @@ class MarketServiceTest {
 
     static Goods item(int status) {
         return new Goods("g", "seller", "c", "教材", new BigDecimal("12.34"), null,
-                2, "描述", 4, null, TIME, status, "卖家", "教材", status == 0);
+                2, "描述", 4, null, TIME, status, "卖家", "教材", status == 1);
     }
     static Order order(int status) { return new Order("o", "buyer", "seller", "g", new BigDecimal("12.34"), status, TIME); }
     static GoodsInput input() { return new GoodsInput("c", "新标题", new BigDecimal("19.99"), null, 2, "描述", 4); }
@@ -34,8 +34,8 @@ class MarketServiceTest {
     @BeforeEach void setup() {
         db = mock(MarketMapper.class); users = mock(UserMapper.class);
         goods = new GoodsService(db); orders = new OrderService(db); communication = new CommunicationService(db, users);
-        when(db.lockGoods("g")).thenReturn(item(0));
-        when(db.goods("g")).thenReturn(item(0));
+        when(db.lockGoods("g")).thenReturn(item(1));
+        when(db.goods("g")).thenReturn(item(1));
         when(db.activeOrders("g")).thenReturn(List.of());
         when(db.order("o")).thenReturn(order(0)); when(db.lockOrder("o")).thenReturn(order(0));
     }
@@ -44,14 +44,14 @@ class MarketServiceTest {
         goods.list(new PageQuery(), "教材", null, null, null, null, 3, false);
         var filter = ArgumentCaptor.forClass(GoodsFilter.class);
         verify(db).goodsList(filter.capture());
-        assertThat(filter.getValue().status()).isZero();
+        assertThat(filter.getValue().status()).isEqualTo(1);
         verify(db).goodsCount(filter.getValue());
     }
     @Test void hiddenGoodsOnlyVisibleToOwnerOrAdmin() {
-        when(db.goods("g")).thenReturn(item(3));
+        when(db.goods("g")).thenReturn(item(0));
         assertThatThrownBy(() -> goods.detail("g", null, false)).isInstanceOf(BusinessException.class);
-        assertThat(goods.detail("g", "seller", false).goodsStatus()).isEqualTo(3);
-        assertThat(goods.detail("g", "admin", true).goodsStatus()).isEqualTo(3);
+        assertThat(goods.detail("g", "seller", false).goodsStatus()).isEqualTo(0);
+        assertThat(goods.detail("g", "admin", true).goodsStatus()).isEqualTo(0);
     }
     @Test void invalidPriceRangeIsRejectedBeforeQuery() {
         assertThatThrownBy(() -> goods.list(new PageQuery(), null, null, BigDecimal.TEN, BigDecimal.ONE, null, 0, false))
@@ -66,22 +66,22 @@ class MarketServiceTest {
         verify(db, never()).updateGoods(any(), any());
     }
     @Test void reviewRequiresPendingStateAndRejectionReason() {
-        when(db.lockGoods("g")).thenReturn(item(3));
-        assertThatThrownBy(() -> goods.review("g", new ReviewInput("REJECT", " "))).isInstanceOf(BusinessException.class);
-        when(db.goodsStatus("g", 3, 4, "信息不足")).thenReturn(1);
-        goods.review("g", new ReviewInput("REJECT", "信息不足"));
-        verify(db).goodsStatus("g", 3, 4, "信息不足");
         when(db.lockGoods("g")).thenReturn(item(0));
+        assertThatThrownBy(() -> goods.review("g", new ReviewInput("REJECT", " "))).isInstanceOf(BusinessException.class);
+        when(db.goodsStatus("g", 0, 4, "信息不足")).thenReturn(1);
+        goods.review("g", new ReviewInput("REJECT", "信息不足"));
+        verify(db).goodsStatus("g", 0, 4, "信息不足");
+        when(db.lockGoods("g")).thenReturn(item(1));
         assertThatThrownBy(() -> goods.review("g", new ReviewInput("PASS", null))).isInstanceOf(BusinessException.class);
     }
     @Test void adminCanOnlyEditPendingGoodsBeforeReview() {
-        when(db.lockGoods("g")).thenReturn(item(3));
+        when(db.lockGoods("g")).thenReturn(item(0));
         when(db.category("c")).thenReturn(new com.campus.secondhand.category.CategoryMapper.Category("c", "教材", null));
         when(db.updateGoods("g", input())).thenReturn(1);
-        when(db.goods("g")).thenReturn(item(3));
+        when(db.goods("g")).thenReturn(item(0));
         goods.editForReview("g", input());
         verify(db).updateGoods("g", input());
-        when(db.lockGoods("g")).thenReturn(item(0));
+        when(db.lockGoods("g")).thenReturn(item(1));
         assertThatThrownBy(() -> goods.editForReview("g", input())).isInstanceOf(BusinessException.class);
     }
     @Test void referencedCategoryCannotBeDeleted() {
@@ -89,6 +89,62 @@ class MarketServiceTest {
         when(db.categoryGoods("c")).thenReturn(1L);
         assertThatThrownBy(() -> goods.deleteCategory("c")).isInstanceOf(BusinessException.class);
         verify(db, never()).deleteCategory(any());
+    }
+    @Test void categoryHierarchyRejectsCyclesMissingParentsAndDeletingParents() {
+        var root = new com.campus.secondhand.category.CategoryMapper.Category("1", "父类", null, "0", 1);
+        var child = new com.campus.secondhand.category.CategoryMapper.Category("2", "子类", null, "1", 2);
+        when(db.lockCategories()).thenReturn(List.of(root, child));
+        when(db.category("1")).thenReturn(root);
+        assertThatThrownBy(() -> goods.saveCategory("1", new CategoryInput("父类", null, "2", 0)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("自身或子分类");
+        assertThatThrownBy(() -> goods.saveCategory(null, new CategoryInput("新类", null, "99", 0)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("父分类不存在");
+        assertThatThrownBy(() -> goods.deleteCategory("1"))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("子分类");
+        verify(db, never()).updateCategory(any(), any());
+        verify(db, never()).deleteCategory(any());
+    }
+    @Test void categoryEditPreservesOmittedParentAndSort() {
+        var parent = new com.campus.secondhand.category.CategoryMapper.Category("1", "父类", null, "0", 1);
+        var child = new com.campus.secondhand.category.CategoryMapper.Category("2", "子类", null, "1", 7);
+        when(db.lockCategories()).thenReturn(List.of(parent, child));
+        when(db.category("2")).thenReturn(child);
+        when(db.updateCategory(eq("2"), any())).thenReturn(1);
+        goods.saveCategory("2", new CategoryInput("改名", null));
+        verify(db).updateCategory("2", new CategoryInput("改名", null, "1", 7));
+    }
+    @Test void editingImagesPersistsOrderAndEmptyArrayClearsButOmissionPreserves() {
+        when(db.category("c")).thenReturn(new com.campus.secondhand.category.CategoryMapper.Category("c", "类别", null));
+        when(db.updateGoods(eq("g"), any())).thenReturn(1);
+        when(db.insertGoodsImage(any(), any(), anyInt())).thenReturn(1);
+        goods.edit("g", "seller", input());
+        verify(db, never()).deleteGoodsImages(any());
+        var first = "https://example.com/a.jpg";
+        var second = "https://example.com/b.png";
+        goods.edit("g", "seller", new GoodsInput("c", "教材", BigDecimal.TEN, null, 2, "描述", 4, List.of(first, second)));
+        var writes = inOrder(db);
+        writes.verify(db).deleteGoodsImages("g");
+        writes.verify(db).insertGoodsImage("g", first, 1);
+        writes.verify(db).insertGoodsImage("g", second, 2);
+        goods.edit("g", "seller", new GoodsInput("c", "教材", BigDecimal.TEN, null, 2, "描述", 4, List.of()));
+        verify(db, times(2)).deleteGoodsImages("g");
+    }
+    @Test void malformedImageUrlsDoNotReachDatabaseWrites() {
+        var body = new GoodsInput("c", "教材", BigDecimal.TEN, null, 2, "描述", 4, List.of("javascript:alert(1)"));
+        assertThatThrownBy(() -> goods.publish("seller", body)).isInstanceOf(BusinessException.class);
+        verify(db, never()).insertGoods(any(), any(), any());
+        verify(db, never()).deleteGoodsImages(any());
+    }
+    @Test void cannotCreateThirdCategoryLevelOrPublishFiveImages() {
+        var root = new com.campus.secondhand.category.CategoryMapper.Category("1", "父类", null, "0", 0);
+        var child = new com.campus.secondhand.category.CategoryMapper.Category("2", "子类", null, "1", 0);
+        when(db.lockCategories()).thenReturn(List.of(root, child));
+        assertThatThrownBy(() -> goods.saveCategory(null, new CategoryInput("第三层", null, "2", 0)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("两级");
+        var images = java.util.Collections.nCopies(5, "https://example.com/image.png");
+        assertThatThrownBy(() -> goods.publish("seller", new GoodsInput("c", "教材", BigDecimal.TEN, null, 2, "描述", 4, images)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("4 张");
+        verify(db, never()).insertGoods(any(), any(), any());
     }
     @Test void orderUsesDatabasePriceAndLocksBeforeCheckingAvailability() {
         when(db.insertOrder(any())).thenReturn(1);
@@ -112,11 +168,11 @@ class MarketServiceTest {
     }
     @Test void completionChangesBothRecordsInDefinedOrder() {
         when(db.order("o")).thenReturn(order(2)); when(db.lockOrder("o")).thenReturn(order(2));
-        when(db.orderStatus("o", 2, 3)).thenReturn(1); when(db.goodsStatus("g", 0, 1, null)).thenReturn(1);
+        when(db.orderStatus("o", 2, 3)).thenReturn(1); when(db.goodsStatus("g", 1, 3, null)).thenReturn(1);
         assertThat(orders.action("o", "buyer", "complete").orderStatus()).isEqualTo(3);
         var sequence = inOrder(db);
         sequence.verify(db).order("o"); sequence.verify(db).lockGoods("g"); sequence.verify(db).lockOrder("o");
-        sequence.verify(db).orderStatus("o", 2, 3); sequence.verify(db).goodsStatus("g", 0, 1, null);
+        sequence.verify(db).orderStatus("o", 2, 3); sequence.verify(db).goodsStatus("g", 1, 3, null);
     }
     @Test void paymentDeliveryAndCancellationEnforceActorAndOldState() {
         assertThatThrownBy(() -> orders.action("o", "seller", "mock-pay")).isInstanceOf(BusinessException.class);
@@ -138,7 +194,7 @@ class MarketServiceTest {
     @Test void evaluationRequiresCompletionAndGetsIdentityFromOrder() {
         assertThatThrownBy(() -> orders.evaluate("o", "buyer", new EvaluationInput(5, "很好"))).isInstanceOf(BusinessException.class);
         when(db.order("o")).thenReturn(order(3)); when(db.lockOrder("o")).thenReturn(order(3));
-        when(db.evaluationIds("o")).thenReturn(List.of()); when(db.insertEvaluation(any())).thenReturn(1);
+        when(db.evaluationIds("o")).thenReturn(List.of()); when(db.insertEvaluation(any(), any())).thenReturn(1);
         var result = orders.evaluate("o", "buyer", new EvaluationInput(5, "很好"));
         assertThat(result.goodsId()).isEqualTo("g"); assertThat(result.evaluateUserId()).isEqualTo("buyer");
         when(db.evaluationIds("o")).thenReturn(List.of("e"));
@@ -160,12 +216,9 @@ class MarketServiceTest {
         communication.messages("me", "peer", new PageQuery());
         verify(db).messages("me", "peer", 0, 10); verify(db).messageCount("me", "peer");
     }
-    @Test void reportRecordsActualReporterAndHandlingDoesNotImplicitlyOffShelf() {
-        when(db.insertReport(any())).thenReturn(1);
-        var report = communication.report("buyer", new ReportInput("g", "违规", "原因", null));
-        assertThat(report.reportUserId()).isEqualTo("buyer"); assertThat(report.handleStatus()).isZero();
-        when(db.report(report.reportId())).thenReturn(report); when(db.handleReport(report.reportId(), "已处理")).thenReturn(1);
-        communication.handle(report.reportId(), "已处理");
-        verify(db, never()).goodsStatus(any(), anyInt(), anyInt(), any());
+    @Test void reportCannotSilentlyLoseGoodsAssociation() {
+        assertThatThrownBy(() -> communication.report("buyer", new ReportInput("g", "1", "原因", null)))
+                .isInstanceOf(BusinessException.class).hasMessageContaining("商品编号");
+        verify(db, never()).insertReport(any(), any());
     }
 }

@@ -18,7 +18,7 @@ public class OrderService {
     public Order create(String buyer, String goodsId) {
         var item = found(db.lockGoods(goodsId));
         allow(!item.publishUserId().equals(buyer));
-        state(item.goodsStatus() == 0 && db.activeOrders(goodsId).isEmpty(), "商品当前不可购买");
+        state(item.goodsStatus() == 1 && db.activeOrders(goodsId).isEmpty(), "商品当前不可购买");
         var order = new Order(id(), buyer, item.publishUserId(), goodsId, item.sellPrice(), 0, now());
         changed(db.insertOrder(order));
         return order;
@@ -51,10 +51,10 @@ public class OrderService {
             default -> throw new IllegalArgumentException("未知订单动作");
         }
         state(order.orderStatus() == from, "订单当前状态不允许此操作");
-        state(item.goodsStatus() == 0, "商品状态与订单不一致");
+        state(item.goodsStatus() == 1, "商品状态与订单不一致");
         changed(db.orderStatus(id, from, to));
         // 暂由后端事务负责，若 DBA 的触发器负责此更新，联调时替换此处。
-        if (to == 3) { changed(db.goodsStatus(item.goodsId(), 0, 1, null)); }
+        if (to == 3) { changed(db.goodsStatus(item.goodsId(), 1, 3, null)); }
         return new Order(order.orderId(), order.buyerId(), order.sellerId(), order.goodsId(),
                 order.orderPrice(), to, order.createTime());
     }
@@ -67,14 +67,15 @@ public class OrderService {
         allow(order.buyerId().equals(user));
         state(order.orderStatus() == 3, "订单完成后才能评价");
         state(db.evaluationIds(id).isEmpty(), "该订单已经评价");
-        var evaluation = new Evaluation(id(), id, order.goodsId(), user, input.score(), input.content(), now());
-        changed(db.insertEvaluation(evaluation));
-        return evaluation;
+        var evaluation = new Evaluation(null, id, order.goodsId(), user, input.score(), input.content(), now());
+        var key = new com.campus.secondhand.common.GeneratedId();
+        changed(db.insertEvaluation(evaluation, key));
+        return new Evaluation(key.getId(), id, order.goodsId(), user, input.score(), input.content(), evaluation.evaluateTime());
     }
 
     public PageResult<Evaluation> evaluations(String goodsId, PageQuery page) {
         var item = found(db.goods(goodsId));
-        allow(item.goodsStatus() == 0 || item.goodsStatus() == 1);
+        allow(item.goodsStatus() == 1 || item.goodsStatus() == 3);
         return new PageResult<>(db.evaluations(goodsId, page.getOffset(), page.getPageSize()),
                 db.evaluationCount(goodsId), page.getPage(), page.getPageSize());
     }
