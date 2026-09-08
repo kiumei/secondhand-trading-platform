@@ -43,8 +43,8 @@ class MarketApiTest {
     @BeforeEach void setup() {
         reset(db, users);
         when(db.category("c")).thenReturn(new Category("c", "教材", null));
-        when(db.goods(anyString())).thenReturn(MarketServiceTest.item(0));
-        when(db.lockGoods("g")).thenReturn(MarketServiceTest.item(0));
+        when(db.goods(anyString())).thenReturn(MarketServiceTest.item(1));
+        when(db.lockGoods("g")).thenReturn(MarketServiceTest.item(1));
         when(db.activeOrders("g")).thenReturn(List.of());
     }
     private MockHttpSession session(String id, String role) {
@@ -62,7 +62,7 @@ class MarketApiTest {
                 .contentType("application/json").content(body);
     }
     @Test void anonymousCanBrowseButCannotPublish() throws Exception {
-        when(db.goodsList(any())).thenReturn(List.of(MarketServiceTest.item(0))); when(db.goodsCount(any())).thenReturn(1L);
+        when(db.goodsList(any())).thenReturn(List.of(MarketServiceTest.item(1))); when(db.goodsCount(any())).thenReturn(1L);
         mvc.perform(get("/api/goods")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].sellPrice").value("12.34"))
                 .andExpect(jsonPath("$.data.items[0].publishTime").value("2026-09-07T09:00:00+08:00"));
@@ -72,7 +72,7 @@ class MarketApiTest {
         var session = session("seller", "STUDENT");
         mvc.perform(write(post("/api/goods"), session, GOODS.replace("12.34", "12.345"))).andExpect(status().isBadRequest());
         verify(db, never()).insertGoods(any(), any(), any());
-        when(db.insertGoods(any(), eq("seller"), any())).thenReturn(1);
+        when(db.insertGoods(any(), eq("seller"), any())).thenAnswer(call -> { ((com.campus.secondhand.common.GeneratedId)call.getArgument(0)).setId("201"); return 1; });
         mvc.perform(write(post("/api/goods"), session, GOODS)).andExpect(status().isOk());
         verify(db).insertGoods(any(), eq("seller"), any());
     }
@@ -80,13 +80,13 @@ class MarketApiTest {
         mvc.perform(write(post("/api/admin/categories"), session("student", "STUDENT"), "{\"cateName\":\"教材\"}"))
                 .andExpect(status().isForbidden());
         verify(db, never()).insertCategory(any(), any());
-        when(db.insertCategory(any(), any())).thenReturn(1);
+        when(db.insertCategory(any(), any())).thenAnswer(call -> { ((com.campus.secondhand.common.GeneratedId)call.getArgument(0)).setId("7"); return 1; });
         when(db.category(anyString())).thenReturn(new Category("c", "教材", null));
         mvc.perform(write(post("/api/admin/categories"), session("admin", "ADMIN"), "{\"cateName\":\"教材\"}"))
                 .andExpect(status().isOk());
     }
     @Test void adminCanEditPendingGoodsAndUserCanListOwnEvaluations() throws Exception {
-        when(db.lockGoods("g")).thenReturn(MarketServiceTest.item(3));
+        when(db.lockGoods("g")).thenReturn(MarketServiceTest.item(0));
         when(db.updateGoods(eq("g"), any())).thenReturn(1);
         mvc.perform(write(put("/api/admin/goods/g"), session("admin", "ADMIN"), GOODS))
                 .andExpect(status().isOk());
@@ -119,7 +119,7 @@ class MarketApiTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.orderStatus").value(1));
         mvc.perform(write(post("/api/orders/o/evaluation"), session, "{\"score\":0}"))
                 .andExpect(status().isBadRequest());
-        verify(db, never()).insertEvaluation(any());
+        verify(db, never()).insertEvaluation(any(), any());
     }
     @Test void unrelatedUserCannotReadMessageOrHandleReport() throws Exception {
         when(db.message("m")).thenReturn(new Message("m", "a", "b", "私信", 0, MarketServiceTest.TIME));
@@ -129,6 +129,39 @@ class MarketApiTest {
         mvc.perform(write(post("/api/admin/reports/r/handle"), session, "{\"handleResult\":\"处理\"}"))
                 .andExpect(status().isForbidden());
         verify(db, never()).readMessage(any(), any()); verify(db, never()).handleReport(any(), any());
+    }
+    @Test void integrationListsRespectRoleAndCurrentIdentity() throws Exception {
+        mvc.perform(get("/api/admin/orders").session(session("buyer", "STUDENT"))).andExpect(status().isForbidden());
+        verify(db, never()).adminOrders(anyLong(), anyInt());
+        mvc.perform(get("/api/admin/orders").session(session("admin", "ADMIN"))).andExpect(status().isOk());
+        verify(db).adminOrders(0, 10);
+        mvc.perform(get("/api/users/me/messages").param("userId", "victim").session(session("buyer", "STUDENT")))
+                .andExpect(status().isOk());
+        verify(db).inbox("buyer", 0, 10);
+        verify(db).inboxCount("buyer");
+    }
+    @Test void publicProfileNeverIncludesPrivateAccountFields() throws Exception {
+        when(users.publicProfile("101")).thenReturn(new com.campus.secondhand.user.PublicUserView("101", "同学", null, "你好"));
+        mvc.perform(get("/api/public/users/101")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.userName").value("同学"))
+                .andExpect(jsonPath("$.data.phone").doesNotExist())
+                .andExpect(jsonPath("$.data.password").doesNotExist())
+                .andExpect(jsonPath("$.data.role").doesNotExist());
+    }
+    @Test void favoriteRoutesUseCurrentUserAndAdminDeletionRejectsStudents() throws Exception {
+        when(db.addFavorite("buyer", "g")).thenReturn(1);
+        mvc.perform(write(put("/api/goods/g/favorite"), session("buyer", "STUDENT"), "{\"userId\":\"victim\"}"))
+                .andExpect(status().isOk());
+        verify(db).addFavorite("buyer", "g");
+        mvc.perform(get("/api/users/me/favorites").param("userId", "victim").session(session("buyer", "STUDENT")))
+                .andExpect(status().isOk());
+        verify(db).favorites("buyer", 0, 10);
+        mvc.perform(write(delete("/api/admin/evaluations/1"), session("buyer", "STUDENT"), "{}"))
+                .andExpect(status().isForbidden());
+        verify(db, never()).deleteEvaluation(any());
+        when(db.deleteEvaluation("1")).thenReturn(1);
+        mvc.perform(write(delete("/api/admin/evaluations/1"), session("admin", "ADMIN"), "{}"))
+                .andExpect(status().isOk());
     }
     @TestConfiguration
     static class Wiring {
@@ -140,5 +173,8 @@ class MarketApiTest {
         @Bean GoodsController goodsController(GoodsService service) { return new GoodsController(service); }
         @Bean OrderController orderController(OrderService service) { return new OrderController(service); }
         @Bean CommunicationController communicationController(CommunicationService service) { return new CommunicationController(service); }
+        @Bean IntegrationController integrationController(MarketMapper db, UserMapper users) { return new IntegrationController(db, users); }
+        @Bean FavoriteService favoriteService(MarketMapper db) { return new FavoriteService(db); }
+        @Bean FavoriteController favoriteController(FavoriteService service) { return new FavoriteController(service); }
     }
 }

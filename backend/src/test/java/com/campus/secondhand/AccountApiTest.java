@@ -49,7 +49,9 @@ class AccountApiTest {
                 "13800000000", null, null, 0, LocalDateTime.of(2026, 9, 7, 9, 0));
         when(users.findByPhone(student.phone())).thenReturn(student);
         when(users.findById(student.userId())).thenReturn(student);
-        when(users.insert(any())).thenReturn(1);
+        when(users.insert(any(), any())).thenAnswer(call -> {
+            ((com.campus.secondhand.common.GeneratedId) call.getArgument(1)).setId("101"); return 1;
+        });
     }
 
     private MockHttpServletRequestBuilder write(String path, String body) throws Exception {
@@ -65,10 +67,11 @@ class AccountApiTest {
                 {"phone":"13900000000","password":"new-password","userName":"新用户","role":1,"userId":"attacker"}
                 """))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.role").value(0))
+                .andExpect(jsonPath("$.data.userId").value("101"))
                 .andExpect(jsonPath("$.data.password").doesNotExist());
         var capture = ArgumentCaptor.forClass(UserRow.class);
-        verify(users).insert(capture.capture());
-        assertThat(capture.getValue().userId()).matches("[0-9a-f]{32}");
+        verify(users).insert(capture.capture(), any());
+        assertThat(capture.getValue().userId()).isNull();
         assertThat(encoder.matches("new-password", capture.getValue().password())).isTrue();
     }
 
@@ -77,8 +80,8 @@ class AccountApiTest {
                 {"phone":"13800000000","password":"test-password","userName":"重复"}
                 """))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("PHONE_EXISTS"));
-        verify(users, never()).insert(any());
-        when(users.insert(any())).thenThrow(new DuplicateKeyException("test-only"));
+        verify(users, never()).insert(any(), any());
+        doThrow(new DuplicateKeyException("test-only")).when(users).insert(any(), any());
         mvc.perform(write("/api/auth/register", """
                 {"phone":"13900000000","password":"test-password","userName":"并发"}
                 """))
@@ -123,7 +126,7 @@ class AccountApiTest {
                 .andExpect(status().isBadRequest());
         mvc.perform(write("/api/auth/register", "{\"phone\":\"13900000000\",\"password\":\"" + "密".repeat(25) + "\",\"userName\":\"x\"}"))
                 .andExpect(status().isBadRequest());
-        verify(users, never()).insert(any());
+        verify(users, never()).insert(any(), any());
     }
 
     @Test void categoryQueryIsPublicAndUsesDocumentFields() throws Exception {

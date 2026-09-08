@@ -11,18 +11,19 @@
       <arg column="intro" javaType="java.lang.String"/>
       <arg column="user_role" javaType="_int"/>
       <arg column="register_time" javaType="java.time.LocalDateTime"/>
+      <arg column="status" javaType="_int"/>
     </constructor>
   </resultMap>
-  <sql id="columns">user_id, user_name, password, phone, avatar, intro, user_role, register_time</sql>
+  <sql id="columns">user_id, user_name, password, phone, avatar, intro, role AS user_role, register_time, status</sql>
   <select id="findByPhone" resultMap="user">
     SELECT <include refid="columns"/> FROM sys_user WHERE phone = #{phone}
   </select>
   <select id="findById" resultMap="user">
     SELECT <include refid="columns"/> FROM sys_user WHERE user_id = #{userId}
   </select>
-  <insert id="insert">
-    INSERT INTO sys_user (user_id, user_name, password, phone, avatar, intro, user_role, register_time)
-    VALUES (#{userId}, #{userName}, #{password}, #{phone}, #{avatar}, #{intro}, #{userRole}, #{registerTime})
+  <insert id="insert" useGeneratedKeys="true" keyProperty="key.id" keyColumn="user_id">
+    INSERT INTO sys_user (user_name, password, phone, avatar, intro, role, status, register_time)
+    VALUES (#{row.userName}, #{row.password}, #{row.phone}, #{row.avatar}, #{row.intro}, #{row.userRole}, 0, #{row.registerTime})
   </insert>
   <update id="updateProfile">
     UPDATE sys_user
@@ -33,4 +34,10 @@
     </set>
     WHERE user_id = #{userId}
   </update>
+  <select id="publicProfile" resultType="com.campus.secondhand.user.PublicUserView">
+    SELECT CAST(user_id AS CHAR) AS userId,user_name AS userName,avatar,intro FROM sys_user WHERE user_id=#{id}
+  </select>
+  <select id="list" resultMap="user">SELECT <include refid="columns"/> FROM sys_user ORDER BY user_id DESC LIMIT #{size} OFFSET #{offset}</select>
+  <select id="count" resultType="long">SELECT COUNT(*) FROM sys_user</select>
+  <update id="updatePassword">UPDATE sys_user SET password=#{newHash} WHERE user_id=#{id} AND password=#{oldHash}</update>
 </mapper>

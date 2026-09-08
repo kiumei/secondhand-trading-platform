@@ -6,9 +6,11 @@
       <idArg column="category_id" javaType="java.lang.String"/>
       <arg column="cate_name" javaType="java.lang.String"/>
       <arg column="cate_desc" javaType="java.lang.String"/>
+      <arg column="parent_id" javaType="java.lang.String"/>
+      <arg column="sort" javaType="java.lang.Integer"/>
     </constructor>
   </resultMap>
   <select id="findAll" resultMap="category">
-    SELECT category_id, cate_name, cate_desc FROM category ORDER BY category_id
+    SELECT cate_id AS category_id, cate_name, NULL AS cate_desc,parent_id,sort FROM category ORDER BY sort, cate_id
   </select>
 </mapper>

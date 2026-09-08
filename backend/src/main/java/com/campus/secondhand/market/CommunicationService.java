@@ -19,9 +19,10 @@ public class CommunicationService {
     @Transactional
     public Message send(String user, MessageInput input) {
         found(users.findById(input.receiveUserId()));
-        var message = new Message(id(), user, input.receiveUserId(), input.content(), 0, now());
-        changed(db.insertMessage(message));
-        return message;
+        var message = new Message(null, user, input.receiveUserId(), input.content(), 0, now());
+        var key = new com.campus.secondhand.common.GeneratedId();
+        changed(db.insertMessage(message, key));
+        return new Message(key.getId(), user, input.receiveUserId(), input.content(), 0, message.sendTime());
     }
     public PageResult<Message> messages(String user, String peer, PageQuery page) {
         require(peer != null && !peer.isBlank() && peer.length() <= 32, "接收人编号不正确");
@@ -37,12 +38,10 @@ public class CommunicationService {
     }
     @Transactional
     public Report report(String user, ReportInput input) {
-        var item = found(db.goods(input.goodsId()));
-        allow(item.goodsStatus() == 0 || item.goodsStatus() == 1 || item.publishUserId().equals(user));
-        var report = new Report(id(), user, input.goodsId(), input.reportType(), input.reportContent(), input.proofImg(), 0, null);
-        changed(db.insertReport(report));
-        return report;
+        throw new com.campus.secondhand.common.BusinessException(org.springframework.http.HttpStatus.CONFLICT,
+                "REPORT_GOODS_UNAVAILABLE", "举报表尚缺少商品编号，暂不能提交商品举报");
     }
+
     public PageResult<Report> reports(String user, Integer status, PageQuery page) {
         require(status == null || status == 0 || status == 1, "举报处理状态不正确");
         return new PageResult<>(db.reports(user, status, page.getOffset(), page.getPageSize()),

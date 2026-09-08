@@ -8,6 +8,8 @@
 
 当前不会创建业务表、修改原 SQL、插入演示数据或创建触发器。按用户安排，等 DBA 完成数据库后根据其实际触发器定义调整代码；若没有定义，不自行新增触发器。当前关联更新由后端事务负责。
 
+2026-09-08 协作对接以 DBA 最新 SQL 为准，具体字段差异、前端接入点及图片方案见 [对接说明](integration-notes.md)。本轮仅修改后端代码，前端与数据库由对应同学负责。
+
 ## 启动与测试
 
 在 backend 目录执行，需 JDK 17 或更高版本和 Maven。首次构建需要获取 Maven 依赖。
@@ -53,7 +55,7 @@ mvn spring-boot:run "-Dspring-boot.run.profiles=mysql"
 
 联调请求集合和手动执行顺序见 [requests/README.md](requests/README.md)。原始设计的覆盖与缺口见 [design-coverage.md](design-coverage.md)，主要业务已有代码不等于原始构想全部实现。
 
-2026-09-07 执行 `mvn verify -B -ntp`：BUILD SUCCESS，50 项测试通过，0 失败、0 错误、0 跳过，并生成可执行 JAR。基础测试包含真实随机 HTTP 端口、会话与 CSRF 生命周期。账号与业务 API、业务规则测试使用仅存在于测试代码的 Mapper 替身；mysql 装配测试使用 DataSource 替身，验证 Mapper 加载和事务代理但不连接数据库。
+2026-09-08 执行 `mvn verify -B -ntp`：BUILD SUCCESS，55 项测试通过，0 失败、0 错误、0 跳过，并生成可执行 JAR。基础测试包含真实随机 HTTP 端口、会话与 CSRF 生命周期。账号与业务 API、业务规则测试使用仅存在于测试代码的 Mapper 替身；mysql 装配测试使用 DataSource 替身，验证 Mapper 加载和事务代理但不连接数据库。
 
 已按 Java 17 目标编译，在本机 JDK 25 运行；尚未在 JDK 17 运行时单独验证。
 
@@ -74,11 +76,11 @@ mysql 模式提供：
 
 当前账号字段使用 Word 数据字典：sys_user(user_id, user_name, password, phone, avatar, intro, user_role, register_time)；分类使用 category(category_id, cate_name, cate_desc)。主键生成 32 位字符串，注册角色固定为 0，时间按 Asia/Shanghai 生成。手机号唯一约束是并发注册的数据库前提。
 
-当前只实现已有字段长度与非空校验：手机号最长 20 字符、昵称最长 50 字符，密码非空且 UTF-8 不超过 BCrypt 的 72 字节限制。密码复杂度、手机号额外格式限制未自行制定。密码哈希保存为不带算法前缀的 BCrypt 格式。
+当前只实现已有字段长度与非空校验：手机号最长 11 字符、昵称最长 20 字符，密码非空且 UTF-8 不超过 BCrypt 的 72 字节限制。密码复杂度、手机号额外格式限制未自行制定。密码哈希保存为不带算法前缀的 BCrypt 格式。
 
 错误码：PHONE_EXISTS（409），BAD_CREDENTIALS（401），INVALID_REQUEST（400）。非法注册 role/userId 字段不会改变后端生成的身份信息。
 
-注册事务依赖真实数据库验证；MyBatis XML 解析通过不等于 SQL 已在 MySQL 执行通过。原始设计 SQL 未修改，业务映射按用户指示采用修正后的设计口径。订单状态已按用户确认沿用 PDM 的 0待付款、1待发货、2待收货、3完成、4取消、5售后。交易模块已实现，触发器关联更新按 DBA 最终定义再调整。
+注册事务依赖真实数据库验证；MyBatis XML 解析通过不等于 SQL 已在 MySQL 执行通过。原始设计 SQL 未修改，业务映射已改用 db/secondhand_full.sql 的实际列名和自增主键。订单状态已按用户确认沿用 PDM 的 0待付款、1待发货、2待收货、3完成、4取消、5售后。交易模块已实现，触发器关联更新按 DBA 最终定义再调整。
 
 会话退出遵循 [Spring Security 官方处理流程](https://docs.spring.io/spring-security/reference/6.5/servlet/authentication/logout.html)，返回项目统一 JSON 响应。
 
@@ -91,9 +93,9 @@ mysql 模式提供：
 - 订单：同一事务先锁商品再检查有效订单；金额取数据库售价。完成订单与标记已售在同一事务中执行。有效订单包括 0/1/2/3/5，取消订单不阻止再次购买；仅未支付订单允许取消。重复状态操作返回 409，不重复成交。没有自动超时取消。
 - 评价：只允许已完成订单的买家评价一次，商品和评价人从订单取值；锁后使用当前读检查已存在评价。
 - 私信：只查询当前用户与指定对方的会话；只有接收人可标记已读。消息按发送时间和 ID 倒序分页。
-- 举报：绑定当前用户与商品；管理员填写处理结果，下架通过独立商品操作完成。Word 中举报没有时间字段，因此暂按 ID 稳定排序，不声称按举报时间排序。
+- 举报：当前 DBA 表缺少商品 ID，提交返回 409 REPORT_GOODS_UNAVAILABLE。已有举报可读取和处理，goodsId 返回 null；仍按 ID 排序。
 
-订单仅使用 Word 的现有列加已确认的 PDM 状态编码，不自行增加 pay_status、pay_time、finish_time。评价保留 Word 中的商品与评价人外键。原设计没有商品封面字段，本轮没有添加 cover_url 或上传接口；头像和举报证据暂只保存已有的地址字段。
+订单已对接当前数据库的 pay_status、pay_time、finish_time；评价通过订单联查商品和买家。商品采用 0待审核、1上架、2下架、3已售、4驳回。JPEG/PNG 上传与公开访问接口已实现，商品图片关联等待 DBA 确定表结构。
 
 本轮测试覆盖参数校验、访问权限、状态流转、重复操作、金额来源、私信收发范围、SQL 参数绑定、Mapper 装配和事务代理。真实 MySQL 的 SQL 执行、外键与唯一约束、同时下单的互斥和事务回滚，以及前后端完整联调仍待完成。尚未为演示数据作安排，也未提交或推送代码。
 
@@ -116,4 +118,4 @@ java -jar target/secondhand-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=
 
 该脚本在随机本地端口启动 JAR，检查 health、CSRF、401、403、退出及旧 token 失效，完成后关闭自己启动的 Java 进程。日志位于 target/packaged-verification，不包含账号密码或 token。
 
-2026-09-07：`mvn verify -B -ntp` 返回 BUILD SUCCESS，50 项测试全部通过；打包 JAR 的 local 模式启动和基础检查返回 PASS，验证脚本能够自行关闭 Java 进程。请求集合共 42 项，已检查 JSON、变量引用和脚本语法；未在 Postman 与真实数据库中运行完整业务流程。打包输出与日志位于已忽略的 target 目录，未提交或推送。
+2026-09-08：`mvn verify -B -ntp` 返回 BUILD SUCCESS，55 项测试全部通过；打包 JAR 的 local 模式启动和基础检查返回 PASS，验证脚本能够自行关闭 Java 进程。请求集合共 50 项，已检查 JSON、变量引用和脚本语法；未在 Postman 与真实数据库中运行完整业务流程。打包输出与日志位于已忽略的 target 目录，未提交或推送。
