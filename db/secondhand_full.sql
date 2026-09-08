@@ -11,7 +11,7 @@
  Target Server Version : 80044 (8.0.44)
  File Encoding         : 65001
 
- Date: 08/09/2026 10:25:36
+ Date: 08/09/2026 12:36:36
 */
 
 SET NAMES utf8mb4;
@@ -184,6 +184,227 @@ INSERT INTO `evaluate` VALUES (192, '78', 3, 'dd9Em58EJP', '2001-06-19 12:24:37'
 INSERT INTO `evaluate` VALUES (196, '75', 3, '1KCbpJTzZ9', '2017-02-07 05:10:33');
 INSERT INTO `evaluate` VALUES (197, '48', 2, 'AcNFhtAX9q', '2006-05-19 15:48:12');
 INSERT INTO `evaluate` VALUES (200, '13', 4, 'bcfSzlMPUV', '2003-01-30 17:03:00');
+
+-- ----------------------------
+-- Table structure for favorite
+-- ----------------------------
+DROP TABLE IF EXISTS `favorite`;
+CREATE TABLE `favorite`  (
+  `favorite_id` int NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
+  `user_id` int NOT NULL COMMENT '收藏的用户ID',
+  `goods_id` int NOT NULL COMMENT '被收藏的商品ID',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`favorite_id`) USING BTREE,
+  UNIQUE INDEX `uk_user_goods`(`user_id` ASC, `goods_id` ASC) USING BTREE,
+  INDEX `idx_user_time`(`user_id` ASC, `create_time` ASC) USING BTREE,
+  INDEX `fk_favorite_goods`(`goods_id` ASC) USING BTREE,
+  CONSTRAINT `fk_favorite_goods` FOREIGN KEY (`goods_id`) REFERENCES `goods` (`goods_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `fk_favorite_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`user_id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 256 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '商品收藏表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of favorite
+-- ----------------------------
+INSERT INTO `favorite` VALUES (1, 10, 1, '2026-09-06 09:35:56');
+INSERT INTO `favorite` VALUES (2, 9, 1, '2026-09-05 21:35:56');
+INSERT INTO `favorite` VALUES (3, 8, 1, '2026-09-05 20:35:56');
+INSERT INTO `favorite` VALUES (4, 7, 1, '2026-09-07 05:35:56');
+INSERT INTO `favorite` VALUES (5, 6, 1, '2026-09-05 21:35:56');
+INSERT INTO `favorite` VALUES (6, 5, 1, '2026-09-07 15:35:56');
+INSERT INTO `favorite` VALUES (7, 4, 1, '2026-09-07 19:35:56');
+INSERT INTO `favorite` VALUES (8, 3, 1, '2026-09-07 14:35:56');
+INSERT INTO `favorite` VALUES (9, 2, 1, '2026-09-06 00:35:56');
+INSERT INTO `favorite` VALUES (10, 1, 1, '2026-09-07 01:35:56');
+INSERT INTO `favorite` VALUES (11, 10, 2, '2026-09-04 15:35:56');
+INSERT INTO `favorite` VALUES (12, 9, 2, '2026-09-05 20:35:56');
+INSERT INTO `favorite` VALUES (13, 8, 2, '2026-09-06 19:35:56');
+INSERT INTO `favorite` VALUES (14, 7, 2, '2026-09-08 00:35:56');
+INSERT INTO `favorite` VALUES (15, 6, 2, '2026-09-06 22:35:56');
+INSERT INTO `favorite` VALUES (16, 5, 2, '2026-09-06 03:35:56');
+INSERT INTO `favorite` VALUES (17, 4, 2, '2026-09-05 16:35:56');
+INSERT INTO `favorite` VALUES (18, 3, 2, '2026-09-05 12:35:56');
+INSERT INTO `favorite` VALUES (19, 2, 2, '2026-09-06 05:35:56');
+INSERT INTO `favorite` VALUES (20, 1, 2, '2026-09-06 00:35:56');
+INSERT INTO `favorite` VALUES (21, 10, 3, '2026-09-07 01:35:56');
+INSERT INTO `favorite` VALUES (22, 9, 3, '2026-09-04 12:35:56');
+INSERT INTO `favorite` VALUES (23, 8, 3, '2026-09-05 08:35:56');
+INSERT INTO `favorite` VALUES (24, 7, 3, '2026-09-04 16:35:56');
+INSERT INTO `favorite` VALUES (25, 6, 3, '2026-09-07 05:35:56');
+INSERT INTO `favorite` VALUES (26, 5, 3, '2026-09-05 02:35:56');
+INSERT INTO `favorite` VALUES (27, 4, 3, '2026-09-07 18:35:56');
+INSERT INTO `favorite` VALUES (28, 3, 3, '2026-09-06 18:35:56');
+INSERT INTO `favorite` VALUES (29, 2, 3, '2026-09-06 04:35:56');
+INSERT INTO `favorite` VALUES (30, 1, 3, '2026-09-06 06:35:56');
+INSERT INTO `favorite` VALUES (31, 10, 4, '2026-09-08 07:35:56');
+INSERT INTO `favorite` VALUES (32, 9, 4, '2026-09-05 22:35:56');
+INSERT INTO `favorite` VALUES (33, 8, 4, '2026-09-04 12:35:56');
+INSERT INTO `favorite` VALUES (34, 7, 4, '2026-09-04 14:35:56');
+INSERT INTO `favorite` VALUES (35, 6, 4, '2026-09-05 03:35:56');
+INSERT INTO `favorite` VALUES (36, 5, 4, '2026-09-07 10:35:56');
+INSERT INTO `favorite` VALUES (37, 4, 4, '2026-09-04 20:35:56');
+INSERT INTO `favorite` VALUES (38, 3, 4, '2026-09-05 23:35:56');
+INSERT INTO `favorite` VALUES (39, 2, 4, '2026-09-06 20:35:56');
+INSERT INTO `favorite` VALUES (40, 1, 4, '2026-09-07 18:35:56');
+INSERT INTO `favorite` VALUES (41, 10, 5, '2026-09-05 13:35:56');
+INSERT INTO `favorite` VALUES (42, 9, 5, '2026-09-08 10:35:56');
+INSERT INTO `favorite` VALUES (43, 8, 5, '2026-09-04 13:35:56');
+INSERT INTO `favorite` VALUES (44, 7, 5, '2026-09-05 13:35:56');
+INSERT INTO `favorite` VALUES (45, 6, 5, '2026-09-05 13:35:56');
+INSERT INTO `favorite` VALUES (46, 5, 5, '2026-09-06 16:35:56');
+INSERT INTO `favorite` VALUES (47, 4, 5, '2026-09-08 06:35:56');
+INSERT INTO `favorite` VALUES (48, 3, 5, '2026-09-08 12:35:56');
+INSERT INTO `favorite` VALUES (49, 2, 5, '2026-09-05 01:35:56');
+INSERT INTO `favorite` VALUES (50, 1, 5, '2026-09-07 22:35:56');
+INSERT INTO `favorite` VALUES (51, 10, 6, '2026-09-07 14:35:56');
+INSERT INTO `favorite` VALUES (52, 9, 6, '2026-09-05 16:35:56');
+INSERT INTO `favorite` VALUES (53, 8, 6, '2026-09-05 11:35:56');
+INSERT INTO `favorite` VALUES (54, 7, 6, '2026-09-05 20:35:56');
+INSERT INTO `favorite` VALUES (55, 6, 6, '2026-09-04 09:35:56');
+INSERT INTO `favorite` VALUES (56, 5, 6, '2026-09-08 06:35:56');
+INSERT INTO `favorite` VALUES (57, 4, 6, '2026-09-07 04:35:56');
+INSERT INTO `favorite` VALUES (58, 3, 6, '2026-09-06 17:35:56');
+INSERT INTO `favorite` VALUES (59, 2, 6, '2026-09-07 17:35:56');
+INSERT INTO `favorite` VALUES (60, 1, 6, '2026-09-05 18:35:56');
+INSERT INTO `favorite` VALUES (61, 10, 7, '2026-09-05 11:35:56');
+INSERT INTO `favorite` VALUES (62, 9, 7, '2026-09-05 16:35:56');
+INSERT INTO `favorite` VALUES (63, 8, 7, '2026-09-07 16:35:56');
+INSERT INTO `favorite` VALUES (64, 7, 7, '2026-09-04 11:35:56');
+INSERT INTO `favorite` VALUES (65, 6, 7, '2026-09-07 11:35:56');
+INSERT INTO `favorite` VALUES (66, 5, 7, '2026-09-06 23:35:56');
+INSERT INTO `favorite` VALUES (67, 4, 7, '2026-09-08 02:35:56');
+INSERT INTO `favorite` VALUES (68, 3, 7, '2026-09-06 23:35:56');
+INSERT INTO `favorite` VALUES (69, 2, 7, '2026-09-06 02:35:56');
+INSERT INTO `favorite` VALUES (70, 1, 7, '2026-09-05 07:35:56');
+INSERT INTO `favorite` VALUES (71, 10, 8, '2026-09-07 22:35:56');
+INSERT INTO `favorite` VALUES (72, 9, 8, '2026-09-06 21:35:56');
+INSERT INTO `favorite` VALUES (73, 8, 8, '2026-09-06 05:35:56');
+INSERT INTO `favorite` VALUES (74, 7, 8, '2026-09-06 02:35:56');
+INSERT INTO `favorite` VALUES (75, 6, 8, '2026-09-07 09:35:56');
+INSERT INTO `favorite` VALUES (76, 5, 8, '2026-09-06 01:35:56');
+INSERT INTO `favorite` VALUES (77, 4, 8, '2026-09-07 20:35:56');
+INSERT INTO `favorite` VALUES (78, 3, 8, '2026-09-08 10:35:56');
+INSERT INTO `favorite` VALUES (79, 2, 8, '2026-09-05 22:35:56');
+INSERT INTO `favorite` VALUES (80, 1, 8, '2026-09-08 09:35:56');
+INSERT INTO `favorite` VALUES (81, 10, 9, '2026-09-07 03:35:56');
+INSERT INTO `favorite` VALUES (82, 9, 9, '2026-09-06 04:35:56');
+INSERT INTO `favorite` VALUES (83, 8, 9, '2026-09-05 02:35:56');
+INSERT INTO `favorite` VALUES (84, 7, 9, '2026-09-06 17:35:56');
+INSERT INTO `favorite` VALUES (85, 6, 9, '2026-09-05 16:35:56');
+INSERT INTO `favorite` VALUES (86, 5, 9, '2026-09-07 23:35:56');
+INSERT INTO `favorite` VALUES (87, 4, 9, '2026-09-06 01:35:56');
+INSERT INTO `favorite` VALUES (88, 3, 9, '2026-09-06 01:35:56');
+INSERT INTO `favorite` VALUES (89, 2, 9, '2026-09-07 19:35:56');
+INSERT INTO `favorite` VALUES (90, 1, 9, '2026-09-08 03:35:56');
+INSERT INTO `favorite` VALUES (91, 10, 10, '2026-09-04 12:35:56');
+INSERT INTO `favorite` VALUES (92, 9, 10, '2026-09-06 08:35:56');
+INSERT INTO `favorite` VALUES (93, 8, 10, '2026-09-05 09:35:56');
+INSERT INTO `favorite` VALUES (94, 7, 10, '2026-09-07 20:35:56');
+INSERT INTO `favorite` VALUES (95, 6, 10, '2026-09-06 03:35:56');
+INSERT INTO `favorite` VALUES (96, 5, 10, '2026-09-07 00:35:56');
+INSERT INTO `favorite` VALUES (97, 4, 10, '2026-09-08 01:35:56');
+INSERT INTO `favorite` VALUES (98, 3, 10, '2026-09-06 12:35:56');
+INSERT INTO `favorite` VALUES (99, 2, 10, '2026-09-08 06:35:56');
+INSERT INTO `favorite` VALUES (100, 1, 10, '2026-09-04 20:35:56');
+INSERT INTO `favorite` VALUES (101, 10, 11, '2026-09-07 14:35:56');
+INSERT INTO `favorite` VALUES (102, 9, 11, '2026-09-06 13:35:56');
+INSERT INTO `favorite` VALUES (103, 8, 11, '2026-09-05 14:35:56');
+INSERT INTO `favorite` VALUES (104, 7, 11, '2026-09-08 02:35:56');
+INSERT INTO `favorite` VALUES (105, 6, 11, '2026-09-06 20:35:56');
+INSERT INTO `favorite` VALUES (106, 5, 11, '2026-09-05 14:35:56');
+INSERT INTO `favorite` VALUES (107, 4, 11, '2026-09-07 05:35:56');
+INSERT INTO `favorite` VALUES (108, 3, 11, '2026-09-06 14:35:56');
+INSERT INTO `favorite` VALUES (109, 2, 11, '2026-09-07 01:35:56');
+INSERT INTO `favorite` VALUES (110, 1, 11, '2026-09-06 19:35:56');
+INSERT INTO `favorite` VALUES (111, 10, 12, '2026-09-04 11:35:56');
+INSERT INTO `favorite` VALUES (112, 9, 12, '2026-09-05 18:35:56');
+INSERT INTO `favorite` VALUES (113, 8, 12, '2026-09-06 23:35:56');
+INSERT INTO `favorite` VALUES (114, 7, 12, '2026-09-04 18:35:56');
+INSERT INTO `favorite` VALUES (115, 6, 12, '2026-09-06 22:35:56');
+INSERT INTO `favorite` VALUES (116, 5, 12, '2026-09-07 17:35:56');
+INSERT INTO `favorite` VALUES (117, 4, 12, '2026-09-05 02:35:56');
+INSERT INTO `favorite` VALUES (118, 3, 12, '2026-09-06 06:35:56');
+INSERT INTO `favorite` VALUES (119, 2, 12, '2026-09-07 12:35:56');
+INSERT INTO `favorite` VALUES (120, 1, 12, '2026-09-06 03:35:56');
+INSERT INTO `favorite` VALUES (121, 10, 13, '2026-09-07 20:35:56');
+INSERT INTO `favorite` VALUES (122, 9, 13, '2026-09-08 03:35:56');
+INSERT INTO `favorite` VALUES (123, 8, 13, '2026-09-04 09:35:56');
+INSERT INTO `favorite` VALUES (124, 7, 13, '2026-09-05 17:35:56');
+INSERT INTO `favorite` VALUES (125, 6, 13, '2026-09-06 23:35:56');
+INSERT INTO `favorite` VALUES (126, 5, 13, '2026-09-04 21:35:56');
+INSERT INTO `favorite` VALUES (127, 4, 13, '2026-09-07 12:35:56');
+INSERT INTO `favorite` VALUES (128, 3, 13, '2026-09-06 00:35:56');
+INSERT INTO `favorite` VALUES (129, 2, 13, '2026-09-07 06:35:56');
+INSERT INTO `favorite` VALUES (130, 1, 13, '2026-09-05 16:35:56');
+INSERT INTO `favorite` VALUES (131, 10, 14, '2026-09-06 09:35:56');
+INSERT INTO `favorite` VALUES (132, 9, 14, '2026-09-06 07:35:56');
+INSERT INTO `favorite` VALUES (133, 8, 14, '2026-09-08 02:35:56');
+INSERT INTO `favorite` VALUES (134, 7, 14, '2026-09-04 17:35:56');
+INSERT INTO `favorite` VALUES (135, 6, 14, '2026-09-07 08:35:56');
+INSERT INTO `favorite` VALUES (136, 5, 14, '2026-09-05 16:35:56');
+INSERT INTO `favorite` VALUES (137, 4, 14, '2026-09-06 04:35:56');
+INSERT INTO `favorite` VALUES (138, 3, 14, '2026-09-05 10:35:56');
+INSERT INTO `favorite` VALUES (139, 2, 14, '2026-09-08 06:35:56');
+INSERT INTO `favorite` VALUES (140, 1, 14, '2026-09-08 05:35:56');
+INSERT INTO `favorite` VALUES (141, 10, 15, '2026-09-07 18:35:56');
+INSERT INTO `favorite` VALUES (142, 9, 15, '2026-09-05 16:35:56');
+INSERT INTO `favorite` VALUES (143, 8, 15, '2026-09-04 19:35:56');
+INSERT INTO `favorite` VALUES (144, 7, 15, '2026-09-06 19:35:56');
+INSERT INTO `favorite` VALUES (145, 6, 15, '2026-09-06 23:35:56');
+INSERT INTO `favorite` VALUES (146, 5, 15, '2026-09-05 23:35:56');
+INSERT INTO `favorite` VALUES (147, 4, 15, '2026-09-04 11:35:56');
+INSERT INTO `favorite` VALUES (148, 3, 15, '2026-09-08 09:35:56');
+INSERT INTO `favorite` VALUES (149, 2, 15, '2026-09-07 13:35:56');
+INSERT INTO `favorite` VALUES (150, 1, 15, '2026-09-08 05:35:56');
+INSERT INTO `favorite` VALUES (151, 10, 16, '2026-09-05 16:35:56');
+INSERT INTO `favorite` VALUES (152, 9, 16, '2026-09-07 19:35:56');
+INSERT INTO `favorite` VALUES (153, 8, 16, '2026-09-05 00:35:56');
+INSERT INTO `favorite` VALUES (154, 7, 16, '2026-09-05 17:35:56');
+INSERT INTO `favorite` VALUES (155, 6, 16, '2026-09-04 23:35:56');
+INSERT INTO `favorite` VALUES (156, 5, 16, '2026-09-07 11:35:56');
+INSERT INTO `favorite` VALUES (157, 4, 16, '2026-09-05 13:35:56');
+INSERT INTO `favorite` VALUES (158, 3, 16, '2026-09-05 03:35:56');
+INSERT INTO `favorite` VALUES (159, 2, 16, '2026-09-04 15:35:56');
+INSERT INTO `favorite` VALUES (160, 1, 16, '2026-09-07 15:35:56');
+INSERT INTO `favorite` VALUES (161, 10, 17, '2026-09-07 09:35:56');
+INSERT INTO `favorite` VALUES (162, 9, 17, '2026-09-05 13:35:56');
+INSERT INTO `favorite` VALUES (163, 8, 17, '2026-09-05 09:35:56');
+INSERT INTO `favorite` VALUES (164, 7, 17, '2026-09-05 19:35:56');
+INSERT INTO `favorite` VALUES (165, 6, 17, '2026-09-04 11:35:56');
+INSERT INTO `favorite` VALUES (166, 5, 17, '2026-09-04 16:35:56');
+INSERT INTO `favorite` VALUES (167, 4, 17, '2026-09-05 14:35:56');
+INSERT INTO `favorite` VALUES (168, 3, 17, '2026-09-05 12:35:56');
+INSERT INTO `favorite` VALUES (169, 2, 17, '2026-09-06 07:35:56');
+INSERT INTO `favorite` VALUES (170, 1, 17, '2026-09-06 09:35:56');
+INSERT INTO `favorite` VALUES (171, 10, 18, '2026-09-04 15:35:56');
+INSERT INTO `favorite` VALUES (172, 9, 18, '2026-09-07 22:35:56');
+INSERT INTO `favorite` VALUES (173, 8, 18, '2026-09-04 18:35:56');
+INSERT INTO `favorite` VALUES (174, 7, 18, '2026-09-08 02:35:56');
+INSERT INTO `favorite` VALUES (175, 6, 18, '2026-09-05 02:35:56');
+INSERT INTO `favorite` VALUES (176, 5, 18, '2026-09-05 05:35:56');
+INSERT INTO `favorite` VALUES (177, 4, 18, '2026-09-06 11:35:56');
+INSERT INTO `favorite` VALUES (178, 3, 18, '2026-09-08 05:35:56');
+INSERT INTO `favorite` VALUES (179, 2, 18, '2026-09-04 18:35:56');
+INSERT INTO `favorite` VALUES (180, 1, 18, '2026-09-07 07:35:56');
+INSERT INTO `favorite` VALUES (181, 10, 19, '2026-09-05 07:35:56');
+INSERT INTO `favorite` VALUES (182, 9, 19, '2026-09-04 09:35:56');
+INSERT INTO `favorite` VALUES (183, 8, 19, '2026-09-05 21:35:56');
+INSERT INTO `favorite` VALUES (184, 7, 19, '2026-09-07 16:35:56');
+INSERT INTO `favorite` VALUES (185, 6, 19, '2026-09-08 01:35:56');
+INSERT INTO `favorite` VALUES (186, 5, 19, '2026-09-04 14:35:56');
+INSERT INTO `favorite` VALUES (187, 4, 19, '2026-09-06 23:35:56');
+INSERT INTO `favorite` VALUES (188, 3, 19, '2026-09-08 08:35:56');
+INSERT INTO `favorite` VALUES (189, 2, 19, '2026-09-08 00:35:56');
+INSERT INTO `favorite` VALUES (190, 1, 19, '2026-09-06 14:35:56');
+INSERT INTO `favorite` VALUES (191, 10, 20, '2026-09-04 12:35:56');
+INSERT INTO `favorite` VALUES (192, 9, 20, '2026-09-06 20:35:56');
+INSERT INTO `favorite` VALUES (193, 8, 20, '2026-09-07 21:35:56');
+INSERT INTO `favorite` VALUES (194, 7, 20, '2026-09-06 06:35:56');
+INSERT INTO `favorite` VALUES (195, 6, 20, '2026-09-07 11:35:56');
+INSERT INTO `favorite` VALUES (196, 5, 20, '2026-09-05 20:35:56');
+INSERT INTO `favorite` VALUES (197, 4, 20, '2026-09-06 13:35:56');
+INSERT INTO `favorite` VALUES (198, 3, 20, '2026-09-06 16:35:56');
+INSERT INTO `favorite` VALUES (199, 2, 20, '2026-09-05 05:35:56');
+INSERT INTO `favorite` VALUES (200, 1, 20, '2026-09-05 22:35:56');
 
 -- ----------------------------
 -- Table structure for goods
@@ -415,6 +636,224 @@ INSERT INTO `goods` VALUES (197, 48, 1, 'omni-Orange', 104.69, 570.89, 1, 'Secur
 INSERT INTO `goods` VALUES (198, 79, 5, 'hrange', 245.21, 901.12, 2, 'Remember that failure is an event, not a person. If your Internet Service Provider (ISP) does not provide direct access to its server, Secure Tunneling Protocol (SSH) / HTTP is another solution. To connect to a database or schema, simply double-click it in the pane. Export Wizard                    ', 4, 'NEDJehPWue', '2021-11-13 00:07:29', 1);
 INSERT INTO `goods` VALUES (199, 15, 2, 'Kiwi air', 891.30, 168.48, 2, 'In a Telnet session, all communications, including username and password, are transmitted in plain-text, allowing anyone to listen-in on your session and steal passwords and other information. You must be the change you wish to see in the world.', 2, 'M2PYLq1ohb', '2019-05-10 02:56:11', 2);
 INSERT INTO `goods` VALUES (200, 73, 6, 'Raspbervy', 717.80, 795.89, 2, 'The Synchronize to Database function will give you a full picture of all database differences. Optimism is the one quality more associated with success and happiness than any other.', 3, 'CGRZtxdOQI', '2000-07-19 10:42:54', 1);
+
+-- ----------------------------
+-- Table structure for goods_image
+-- ----------------------------
+DROP TABLE IF EXISTS `goods_image`;
+CREATE TABLE `goods_image`  (
+  `img_id` int NOT NULL AUTO_INCREMENT COMMENT '图片主键',
+  `goods_id` int NOT NULL COMMENT '关联的商品ID',
+  `img_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '图片地址',
+  `sort_order` int NOT NULL DEFAULT 1 COMMENT '图片顺序（1为第一张/封面）',
+  PRIMARY KEY (`img_id`) USING BTREE,
+  INDEX `idx_goods_id`(`goods_id` ASC) USING BTREE,
+  CONSTRAINT `FK_goods_image_goods` FOREIGN KEY (`goods_id`) REFERENCES `goods` (`goods_id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE = InnoDB AUTO_INCREMENT = 256 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '商品图片表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of goods_image
+-- ----------------------------
+INSERT INTO `goods_image` VALUES (1, 26, 'https://picsum.photos/seed/26/300/300', 1);
+INSERT INTO `goods_image` VALUES (2, 89, 'https://picsum.photos/seed/89/300/300', 1);
+INSERT INTO `goods_image` VALUES (3, 174, 'https://picsum.photos/seed/174/300/300', 1);
+INSERT INTO `goods_image` VALUES (4, 28, 'https://picsum.photos/seed/28/300/300', 1);
+INSERT INTO `goods_image` VALUES (5, 170, 'https://picsum.photos/seed/170/300/300', 1);
+INSERT INTO `goods_image` VALUES (6, 62, 'https://picsum.photos/seed/62/300/300', 1);
+INSERT INTO `goods_image` VALUES (7, 6, 'https://picsum.photos/seed/6/300/300', 1);
+INSERT INTO `goods_image` VALUES (8, 64, 'https://picsum.photos/seed/64/300/300', 1);
+INSERT INTO `goods_image` VALUES (9, 146, 'https://picsum.photos/seed/146/300/300', 1);
+INSERT INTO `goods_image` VALUES (10, 152, 'https://picsum.photos/seed/152/300/300', 1);
+INSERT INTO `goods_image` VALUES (11, 159, 'https://picsum.photos/seed/159/300/300', 1);
+INSERT INTO `goods_image` VALUES (12, 25, 'https://picsum.photos/seed/25/300/300', 1);
+INSERT INTO `goods_image` VALUES (13, 44, 'https://picsum.photos/seed/44/300/300', 1);
+INSERT INTO `goods_image` VALUES (14, 97, 'https://picsum.photos/seed/97/300/300', 1);
+INSERT INTO `goods_image` VALUES (15, 12, 'https://picsum.photos/seed/12/300/300', 1);
+INSERT INTO `goods_image` VALUES (16, 56, 'https://picsum.photos/seed/56/300/300', 1);
+INSERT INTO `goods_image` VALUES (17, 59, 'https://picsum.photos/seed/59/300/300', 1);
+INSERT INTO `goods_image` VALUES (18, 126, 'https://picsum.photos/seed/126/300/300', 1);
+INSERT INTO `goods_image` VALUES (19, 123, 'https://picsum.photos/seed/123/300/300', 1);
+INSERT INTO `goods_image` VALUES (20, 181, 'https://picsum.photos/seed/181/300/300', 1);
+INSERT INTO `goods_image` VALUES (21, 184, 'https://picsum.photos/seed/184/300/300', 1);
+INSERT INTO `goods_image` VALUES (22, 27, 'https://picsum.photos/seed/27/300/300', 1);
+INSERT INTO `goods_image` VALUES (23, 92, 'https://picsum.photos/seed/92/300/300', 1);
+INSERT INTO `goods_image` VALUES (24, 138, 'https://picsum.photos/seed/138/300/300', 1);
+INSERT INTO `goods_image` VALUES (25, 139, 'https://picsum.photos/seed/139/300/300', 1);
+INSERT INTO `goods_image` VALUES (26, 15, 'https://picsum.photos/seed/15/300/300', 1);
+INSERT INTO `goods_image` VALUES (27, 66, 'https://picsum.photos/seed/66/300/300', 1);
+INSERT INTO `goods_image` VALUES (28, 84, 'https://picsum.photos/seed/84/300/300', 1);
+INSERT INTO `goods_image` VALUES (29, 150, 'https://picsum.photos/seed/150/300/300', 1);
+INSERT INTO `goods_image` VALUES (30, 50, 'https://picsum.photos/seed/50/300/300', 1);
+INSERT INTO `goods_image` VALUES (31, 110, 'https://picsum.photos/seed/110/300/300', 1);
+INSERT INTO `goods_image` VALUES (32, 111, 'https://picsum.photos/seed/111/300/300', 1);
+INSERT INTO `goods_image` VALUES (33, 105, 'https://picsum.photos/seed/105/300/300', 1);
+INSERT INTO `goods_image` VALUES (34, 182, 'https://picsum.photos/seed/182/300/300', 1);
+INSERT INTO `goods_image` VALUES (35, 101, 'https://picsum.photos/seed/101/300/300', 1);
+INSERT INTO `goods_image` VALUES (36, 142, 'https://picsum.photos/seed/142/300/300', 1);
+INSERT INTO `goods_image` VALUES (37, 140, 'https://picsum.photos/seed/140/300/300', 1);
+INSERT INTO `goods_image` VALUES (38, 175, 'https://picsum.photos/seed/175/300/300', 1);
+INSERT INTO `goods_image` VALUES (39, 199, 'https://picsum.photos/seed/199/300/300', 1);
+INSERT INTO `goods_image` VALUES (40, 129, 'https://picsum.photos/seed/129/300/300', 1);
+INSERT INTO `goods_image` VALUES (41, 187, 'https://picsum.photos/seed/187/300/300', 1);
+INSERT INTO `goods_image` VALUES (42, 37, 'https://picsum.photos/seed/37/300/300', 1);
+INSERT INTO `goods_image` VALUES (43, 145, 'https://picsum.photos/seed/145/300/300', 1);
+INSERT INTO `goods_image` VALUES (44, 176, 'https://picsum.photos/seed/176/300/300', 1);
+INSERT INTO `goods_image` VALUES (45, 11, 'https://picsum.photos/seed/11/300/300', 1);
+INSERT INTO `goods_image` VALUES (46, 52, 'https://picsum.photos/seed/52/300/300', 1);
+INSERT INTO `goods_image` VALUES (47, 57, 'https://picsum.photos/seed/57/300/300', 1);
+INSERT INTO `goods_image` VALUES (48, 108, 'https://picsum.photos/seed/108/300/300', 1);
+INSERT INTO `goods_image` VALUES (49, 19, 'https://picsum.photos/seed/19/300/300', 1);
+INSERT INTO `goods_image` VALUES (50, 147, 'https://picsum.photos/seed/147/300/300', 1);
+INSERT INTO `goods_image` VALUES (51, 60, 'https://picsum.photos/seed/60/300/300', 1);
+INSERT INTO `goods_image` VALUES (52, 124, 'https://picsum.photos/seed/124/300/300', 1);
+INSERT INTO `goods_image` VALUES (53, 161, 'https://picsum.photos/seed/161/300/300', 1);
+INSERT INTO `goods_image` VALUES (54, 141, 'https://picsum.photos/seed/141/300/300', 1);
+INSERT INTO `goods_image` VALUES (55, 155, 'https://picsum.photos/seed/155/300/300', 1);
+INSERT INTO `goods_image` VALUES (56, 143, 'https://picsum.photos/seed/143/300/300', 1);
+INSERT INTO `goods_image` VALUES (57, 121, 'https://picsum.photos/seed/121/300/300', 1);
+INSERT INTO `goods_image` VALUES (58, 131, 'https://picsum.photos/seed/131/300/300', 1);
+INSERT INTO `goods_image` VALUES (59, 169, 'https://picsum.photos/seed/169/300/300', 1);
+INSERT INTO `goods_image` VALUES (60, 16, 'https://picsum.photos/seed/16/300/300', 1);
+INSERT INTO `goods_image` VALUES (61, 48, 'https://picsum.photos/seed/48/300/300', 1);
+INSERT INTO `goods_image` VALUES (62, 34, 'https://picsum.photos/seed/34/300/300', 1);
+INSERT INTO `goods_image` VALUES (63, 98, 'https://picsum.photos/seed/98/300/300', 1);
+INSERT INTO `goods_image` VALUES (64, 135, 'https://picsum.photos/seed/135/300/300', 1);
+INSERT INTO `goods_image` VALUES (65, 188, 'https://picsum.photos/seed/188/300/300', 1);
+INSERT INTO `goods_image` VALUES (66, 40, 'https://picsum.photos/seed/40/300/300', 1);
+INSERT INTO `goods_image` VALUES (67, 114, 'https://picsum.photos/seed/114/300/300', 1);
+INSERT INTO `goods_image` VALUES (68, 128, 'https://picsum.photos/seed/128/300/300', 1);
+INSERT INTO `goods_image` VALUES (69, 63, 'https://picsum.photos/seed/63/300/300', 1);
+INSERT INTO `goods_image` VALUES (70, 68, 'https://picsum.photos/seed/68/300/300', 1);
+INSERT INTO `goods_image` VALUES (71, 70, 'https://picsum.photos/seed/70/300/300', 1);
+INSERT INTO `goods_image` VALUES (72, 107, 'https://picsum.photos/seed/107/300/300', 1);
+INSERT INTO `goods_image` VALUES (73, 183, 'https://picsum.photos/seed/183/300/300', 1);
+INSERT INTO `goods_image` VALUES (74, 79, 'https://picsum.photos/seed/79/300/300', 1);
+INSERT INTO `goods_image` VALUES (75, 165, 'https://picsum.photos/seed/165/300/300', 1);
+INSERT INTO `goods_image` VALUES (76, 93, 'https://picsum.photos/seed/93/300/300', 1);
+INSERT INTO `goods_image` VALUES (77, 151, 'https://picsum.photos/seed/151/300/300', 1);
+INSERT INTO `goods_image` VALUES (78, 156, 'https://picsum.photos/seed/156/300/300', 1);
+INSERT INTO `goods_image` VALUES (79, 73, 'https://picsum.photos/seed/73/300/300', 1);
+INSERT INTO `goods_image` VALUES (80, 81, 'https://picsum.photos/seed/81/300/300', 1);
+INSERT INTO `goods_image` VALUES (81, 191, 'https://picsum.photos/seed/191/300/300', 1);
+INSERT INTO `goods_image` VALUES (82, 85, 'https://picsum.photos/seed/85/300/300', 1);
+INSERT INTO `goods_image` VALUES (83, 149, 'https://picsum.photos/seed/149/300/300', 1);
+INSERT INTO `goods_image` VALUES (84, 173, 'https://picsum.photos/seed/173/300/300', 1);
+INSERT INTO `goods_image` VALUES (85, 177, 'https://picsum.photos/seed/177/300/300', 1);
+INSERT INTO `goods_image` VALUES (86, 17, 'https://picsum.photos/seed/17/300/300', 1);
+INSERT INTO `goods_image` VALUES (87, 42, 'https://picsum.photos/seed/42/300/300', 1);
+INSERT INTO `goods_image` VALUES (88, 137, 'https://picsum.photos/seed/137/300/300', 1);
+INSERT INTO `goods_image` VALUES (89, 113, 'https://picsum.photos/seed/113/300/300', 1);
+INSERT INTO `goods_image` VALUES (90, 130, 'https://picsum.photos/seed/130/300/300', 1);
+INSERT INTO `goods_image` VALUES (91, 47, 'https://picsum.photos/seed/47/300/300', 1);
+INSERT INTO `goods_image` VALUES (92, 195, 'https://picsum.photos/seed/195/300/300', 1);
+INSERT INTO `goods_image` VALUES (93, 65, 'https://picsum.photos/seed/65/300/300', 1);
+INSERT INTO `goods_image` VALUES (94, 120, 'https://picsum.photos/seed/120/300/300', 1);
+INSERT INTO `goods_image` VALUES (95, 157, 'https://picsum.photos/seed/157/300/300', 1);
+INSERT INTO `goods_image` VALUES (96, 118, 'https://picsum.photos/seed/118/300/300', 1);
+INSERT INTO `goods_image` VALUES (97, 36, 'https://picsum.photos/seed/36/300/300', 1);
+INSERT INTO `goods_image` VALUES (98, 122, 'https://picsum.photos/seed/122/300/300', 1);
+INSERT INTO `goods_image` VALUES (99, 168, 'https://picsum.photos/seed/168/300/300', 1);
+INSERT INTO `goods_image` VALUES (100, 197, 'https://picsum.photos/seed/197/300/300', 1);
+INSERT INTO `goods_image` VALUES (101, 43, 'https://picsum.photos/seed/43/300/300', 1);
+INSERT INTO `goods_image` VALUES (102, 185, 'https://picsum.photos/seed/185/300/300', 1);
+INSERT INTO `goods_image` VALUES (103, 192, 'https://picsum.photos/seed/192/300/300', 1);
+INSERT INTO `goods_image` VALUES (104, 136, 'https://picsum.photos/seed/136/300/300', 1);
+INSERT INTO `goods_image` VALUES (105, 10, 'https://picsum.photos/seed/10/300/300', 1);
+INSERT INTO `goods_image` VALUES (106, 134, 'https://picsum.photos/seed/134/300/300', 1);
+INSERT INTO `goods_image` VALUES (107, 193, 'https://picsum.photos/seed/193/300/300', 1);
+INSERT INTO `goods_image` VALUES (108, 109, 'https://picsum.photos/seed/109/300/300', 1);
+INSERT INTO `goods_image` VALUES (109, 116, 'https://picsum.photos/seed/116/300/300', 1);
+INSERT INTO `goods_image` VALUES (110, 22, 'https://picsum.photos/seed/22/300/300', 1);
+INSERT INTO `goods_image` VALUES (111, 78, 'https://picsum.photos/seed/78/300/300', 1);
+INSERT INTO `goods_image` VALUES (112, 164, 'https://picsum.photos/seed/164/300/300', 1);
+INSERT INTO `goods_image` VALUES (113, 72, 'https://picsum.photos/seed/72/300/300', 1);
+INSERT INTO `goods_image` VALUES (114, 91, 'https://picsum.photos/seed/91/300/300', 1);
+INSERT INTO `goods_image` VALUES (115, 1, 'https://picsum.photos/seed/1/300/300', 1);
+INSERT INTO `goods_image` VALUES (116, 125, 'https://picsum.photos/seed/125/300/300', 1);
+INSERT INTO `goods_image` VALUES (117, 54, 'https://picsum.photos/seed/54/300/300', 1);
+INSERT INTO `goods_image` VALUES (118, 127, 'https://picsum.photos/seed/127/300/300', 1);
+INSERT INTO `goods_image` VALUES (119, 180, 'https://picsum.photos/seed/180/300/300', 1);
+INSERT INTO `goods_image` VALUES (120, 99, 'https://picsum.photos/seed/99/300/300', 1);
+INSERT INTO `goods_image` VALUES (121, 148, 'https://picsum.photos/seed/148/300/300', 1);
+INSERT INTO `goods_image` VALUES (122, 20, 'https://picsum.photos/seed/20/300/300', 1);
+INSERT INTO `goods_image` VALUES (123, 35, 'https://picsum.photos/seed/35/300/300', 1);
+INSERT INTO `goods_image` VALUES (124, 13, 'https://picsum.photos/seed/13/300/300', 1);
+INSERT INTO `goods_image` VALUES (125, 86, 'https://picsum.photos/seed/86/300/300', 1);
+INSERT INTO `goods_image` VALUES (126, 90, 'https://picsum.photos/seed/90/300/300', 1);
+INSERT INTO `goods_image` VALUES (127, 162, 'https://picsum.photos/seed/162/300/300', 1);
+INSERT INTO `goods_image` VALUES (128, 196, 'https://picsum.photos/seed/196/300/300', 1);
+INSERT INTO `goods_image` VALUES (129, 23, 'https://picsum.photos/seed/23/300/300', 1);
+INSERT INTO `goods_image` VALUES (130, 104, 'https://picsum.photos/seed/104/300/300', 1);
+INSERT INTO `goods_image` VALUES (131, 153, 'https://picsum.photos/seed/153/300/300', 1);
+INSERT INTO `goods_image` VALUES (132, 171, 'https://picsum.photos/seed/171/300/300', 1);
+INSERT INTO `goods_image` VALUES (133, 87, 'https://picsum.photos/seed/87/300/300', 1);
+INSERT INTO `goods_image` VALUES (134, 158, 'https://picsum.photos/seed/158/300/300', 1);
+INSERT INTO `goods_image` VALUES (135, 7, 'https://picsum.photos/seed/7/300/300', 1);
+INSERT INTO `goods_image` VALUES (136, 46, 'https://picsum.photos/seed/46/300/300', 1);
+INSERT INTO `goods_image` VALUES (137, 82, 'https://picsum.photos/seed/82/300/300', 1);
+INSERT INTO `goods_image` VALUES (138, 154, 'https://picsum.photos/seed/154/300/300', 1);
+INSERT INTO `goods_image` VALUES (139, 103, 'https://picsum.photos/seed/103/300/300', 1);
+INSERT INTO `goods_image` VALUES (140, 58, 'https://picsum.photos/seed/58/300/300', 1);
+INSERT INTO `goods_image` VALUES (141, 144, 'https://picsum.photos/seed/144/300/300', 1);
+INSERT INTO `goods_image` VALUES (142, 166, 'https://picsum.photos/seed/166/300/300', 1);
+INSERT INTO `goods_image` VALUES (143, 55, 'https://picsum.photos/seed/55/300/300', 1);
+INSERT INTO `goods_image` VALUES (144, 8, 'https://picsum.photos/seed/8/300/300', 1);
+INSERT INTO `goods_image` VALUES (145, 186, 'https://picsum.photos/seed/186/300/300', 1);
+INSERT INTO `goods_image` VALUES (146, 32, 'https://picsum.photos/seed/32/300/300', 1);
+INSERT INTO `goods_image` VALUES (147, 106, 'https://picsum.photos/seed/106/300/300', 1);
+INSERT INTO `goods_image` VALUES (148, 77, 'https://picsum.photos/seed/77/300/300', 1);
+INSERT INTO `goods_image` VALUES (149, 133, 'https://picsum.photos/seed/133/300/300', 1);
+INSERT INTO `goods_image` VALUES (150, 14, 'https://picsum.photos/seed/14/300/300', 1);
+INSERT INTO `goods_image` VALUES (151, 3, 'https://picsum.photos/seed/3/300/300', 1);
+INSERT INTO `goods_image` VALUES (152, 167, 'https://picsum.photos/seed/167/300/300', 1);
+INSERT INTO `goods_image` VALUES (153, 200, 'https://picsum.photos/seed/200/300/300', 1);
+INSERT INTO `goods_image` VALUES (154, 21, 'https://picsum.photos/seed/21/300/300', 1);
+INSERT INTO `goods_image` VALUES (155, 53, 'https://picsum.photos/seed/53/300/300', 1);
+INSERT INTO `goods_image` VALUES (156, 95, 'https://picsum.photos/seed/95/300/300', 1);
+INSERT INTO `goods_image` VALUES (157, 75, 'https://picsum.photos/seed/75/300/300', 1);
+INSERT INTO `goods_image` VALUES (158, 178, 'https://picsum.photos/seed/178/300/300', 1);
+INSERT INTO `goods_image` VALUES (159, 194, 'https://picsum.photos/seed/194/300/300', 1);
+INSERT INTO `goods_image` VALUES (160, 9, 'https://picsum.photos/seed/9/300/300', 1);
+INSERT INTO `goods_image` VALUES (161, 179, 'https://picsum.photos/seed/179/300/300', 1);
+INSERT INTO `goods_image` VALUES (162, 29, 'https://picsum.photos/seed/29/300/300', 1);
+INSERT INTO `goods_image` VALUES (163, 41, 'https://picsum.photos/seed/41/300/300', 1);
+INSERT INTO `goods_image` VALUES (164, 117, 'https://picsum.photos/seed/117/300/300', 1);
+INSERT INTO `goods_image` VALUES (165, 198, 'https://picsum.photos/seed/198/300/300', 1);
+INSERT INTO `goods_image` VALUES (166, 2, 'https://picsum.photos/seed/2/300/300', 1);
+INSERT INTO `goods_image` VALUES (167, 30, 'https://picsum.photos/seed/30/300/300', 1);
+INSERT INTO `goods_image` VALUES (168, 115, 'https://picsum.photos/seed/115/300/300', 1);
+INSERT INTO `goods_image` VALUES (169, 112, 'https://picsum.photos/seed/112/300/300', 1);
+INSERT INTO `goods_image` VALUES (170, 61, 'https://picsum.photos/seed/61/300/300', 1);
+INSERT INTO `goods_image` VALUES (171, 189, 'https://picsum.photos/seed/189/300/300', 1);
+INSERT INTO `goods_image` VALUES (172, 102, 'https://picsum.photos/seed/102/300/300', 1);
+INSERT INTO `goods_image` VALUES (173, 119, 'https://picsum.photos/seed/119/300/300', 1);
+INSERT INTO `goods_image` VALUES (174, 5, 'https://picsum.photos/seed/5/300/300', 1);
+INSERT INTO `goods_image` VALUES (175, 51, 'https://picsum.photos/seed/51/300/300', 1);
+INSERT INTO `goods_image` VALUES (176, 31, 'https://picsum.photos/seed/31/300/300', 1);
+INSERT INTO `goods_image` VALUES (177, 38, 'https://picsum.photos/seed/38/300/300', 1);
+INSERT INTO `goods_image` VALUES (178, 49, 'https://picsum.photos/seed/49/300/300', 1);
+INSERT INTO `goods_image` VALUES (179, 67, 'https://picsum.photos/seed/67/300/300', 1);
+INSERT INTO `goods_image` VALUES (180, 69, 'https://picsum.photos/seed/69/300/300', 1);
+INSERT INTO `goods_image` VALUES (181, 4, 'https://picsum.photos/seed/4/300/300', 1);
+INSERT INTO `goods_image` VALUES (182, 24, 'https://picsum.photos/seed/24/300/300', 1);
+INSERT INTO `goods_image` VALUES (183, 83, 'https://picsum.photos/seed/83/300/300', 1);
+INSERT INTO `goods_image` VALUES (184, 100, 'https://picsum.photos/seed/100/300/300', 1);
+INSERT INTO `goods_image` VALUES (185, 39, 'https://picsum.photos/seed/39/300/300', 1);
+INSERT INTO `goods_image` VALUES (186, 160, 'https://picsum.photos/seed/160/300/300', 1);
+INSERT INTO `goods_image` VALUES (187, 18, 'https://picsum.photos/seed/18/300/300', 1);
+INSERT INTO `goods_image` VALUES (188, 94, 'https://picsum.photos/seed/94/300/300', 1);
+INSERT INTO `goods_image` VALUES (189, 33, 'https://picsum.photos/seed/33/300/300', 1);
+INSERT INTO `goods_image` VALUES (190, 45, 'https://picsum.photos/seed/45/300/300', 1);
+INSERT INTO `goods_image` VALUES (191, 71, 'https://picsum.photos/seed/71/300/300', 1);
+INSERT INTO `goods_image` VALUES (192, 163, 'https://picsum.photos/seed/163/300/300', 1);
+INSERT INTO `goods_image` VALUES (193, 190, 'https://picsum.photos/seed/190/300/300', 1);
+INSERT INTO `goods_image` VALUES (194, 96, 'https://picsum.photos/seed/96/300/300', 1);
+INSERT INTO `goods_image` VALUES (195, 88, 'https://picsum.photos/seed/88/300/300', 1);
+INSERT INTO `goods_image` VALUES (196, 132, 'https://picsum.photos/seed/132/300/300', 1);
+INSERT INTO `goods_image` VALUES (197, 172, 'https://picsum.photos/seed/172/300/300', 1);
+INSERT INTO `goods_image` VALUES (198, 76, 'https://picsum.photos/seed/76/300/300', 1);
+INSERT INTO `goods_image` VALUES (199, 80, 'https://picsum.photos/seed/80/300/300', 1);
+INSERT INTO `goods_image` VALUES (200, 74, 'https://picsum.photos/seed/74/300/300', 1);
 
 -- ----------------------------
 -- Table structure for message
