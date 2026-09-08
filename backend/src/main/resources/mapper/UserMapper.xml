@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.campus.secondhand.user.UserMapper">
+  <!-- 列名以 db/secondhand_full.sql 为准：role 0普通/1管理员，status 0正常/1封禁。 -->
   <resultMap id="user" type="com.campus.secondhand.user.UserRow">
     <constructor>
       <idArg column="user_id" javaType="java.lang.String"/>
@@ -9,37 +10,50 @@
       <arg column="phone" javaType="java.lang.String"/>
       <arg column="avatar" javaType="java.lang.String"/>
       <arg column="intro" javaType="java.lang.String"/>
-      <arg column="user_role" javaType="_int"/>
-      <arg column="register_time" javaType="java.time.LocalDateTime"/>
+      <arg column="role" javaType="_int"/>
       <arg column="status" javaType="_int"/>
-      <arg column="address" javaType="java.lang.String"/>
+      <arg column="register_time" javaType="java.time.LocalDateTime"/>
     </constructor>
   </resultMap>
-  <sql id="columns">user_id, user_name, password, phone, avatar, intro, role AS user_role, register_time, status, address</sql>
+  <sql id="columns">user_id, user_name, password, phone, avatar, intro, role, status, register_time</sql>
   <select id="findByPhone" resultMap="user">
     SELECT <include refid="columns"/> FROM sys_user WHERE phone = #{phone}
   </select>
   <select id="findById" resultMap="user">
     SELECT <include refid="columns"/> FROM sys_user WHERE user_id = #{userId}
   </select>
-  <insert id="insert" useGeneratedKeys="true" keyProperty="key.id" keyColumn="user_id">
+  <!-- user_id 自增，不插入主键；注册后通过 lastInsertId 取回。 -->
+  <insert id="insert">
     INSERT INTO sys_user (user_name, password, phone, avatar, intro, role, status, register_time)
-    VALUES (#{row.userName}, #{row.password}, #{row.phone}, #{row.avatar}, #{row.intro}, #{row.userRole}, 0, #{row.registerTime})
+    VALUES (#{userName}, #{password}, #{phone}, #{avatar}, #{intro}, #{role}, #{status}, #{registerTime})
   </insert>
+  <select id="lastInsertId" resultType="long">SELECT LAST_INSERT_ID()</select>
   <update id="updateProfile">
     UPDATE sys_user
     <set>
       <if test="userName != null">user_name = #{userName},</if>
       <if test="avatar != null">avatar = #{avatar},</if>
       <if test="intro != null">intro = #{intro},</if>
-      <if test="address != null">address = #{address},</if>
     </set>
     WHERE user_id = #{userId}
   </update>
-  <select id="publicProfile" resultType="com.campus.secondhand.user.PublicUserView">
-    SELECT CAST(user_id AS CHAR) AS userId,user_name AS userName,avatar,intro FROM sys_user WHERE user_id=#{id}
+  <update id="updateStatus">
+    UPDATE sys_user SET status = #{status} WHERE user_id = #{userId}
+  </update>
+  <update id="updatePassword">
+    UPDATE sys_user SET password = #{password} WHERE user_id = #{userId}
+  </update>
+  <sql id="adminWhere">
+    <where>
+      <if test="keyword != null and keyword != ''">
+        AND (user_name LIKE CONCAT('%',#{keyword},'%') OR phone LIKE CONCAT('%',#{keyword},'%'))
+      </if>
+    </where>
+  </sql>
+  <select id="adminList" resultMap="user">
+    SELECT <include refid="columns"/> FROM sys_user <include refid="adminWhere"/>
+    ORDER BY user_id ASC LIMIT #{size} OFFSET #{offset}
   </select>
-  <select id="list" resultMap="user">SELECT <include refid="columns"/> FROM sys_user ORDER BY user_id DESC LIMIT #{size} OFFSET #{offset}</select>
-  <select id="count" resultType="long">SELECT COUNT(*) FROM sys_user</select>
-  <update id="updatePassword">UPDATE sys_user SET password=#{newHash} WHERE user_id=#{id} AND password=#{oldHash}</update>
+  <select id="adminCount" resultType="long">SELECT COUNT(*) FROM sys_user <include refid="adminWhere"/></select>
+  <select id="countUsers" resultType="long">SELECT COUNT(*) FROM sys_user</select>
 </mapper>

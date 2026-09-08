@@ -1,6 +1,7 @@
 package com.campus.secondhand.auth;
 
 import com.campus.secondhand.common.BusinessException;
+import com.campus.secondhand.common.StatusCodes;
 import com.campus.secondhand.user.UserMapper;
 import com.campus.secondhand.user.UserRow;
 import com.campus.secondhand.user.UserView;
@@ -29,29 +30,30 @@ public class AccountService {
     public UserView register(String phone, String password, String name) {
         checkPasswordLength(password);
         if (users.findByPhone(phone) != null) { throw duplicatePhone(); }
-        var row = new UserRow(null, name,
-                encoder.encode(password), phone, null, null, 0,
-                LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
-        var key = new com.campus.secondhand.common.GeneratedId();
+        // role 固定 0 学生；status 固定 0 正常；主键 user_id 由数据库自增生成。
+        var row = new UserRow(null, name, encoder.encode(password), phone, null, null,
+                0, StatusCodes.USER_NORMAL, LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         try {
-            if (users.insert(row, key) != 1) { throw new IllegalStateException("用户插入影响行数异常"); }
+            if (users.insert(row) != 1) { throw new IllegalStateException("用户插入影响行数异常"); }
         } catch (DuplicateKeyException ex) {
             // 唯一约束兜底：并发注册不能只依赖事前查询。
             throw duplicatePhone();
         }
-        return UserView.from(new UserRow(key.getId(), row.userName(), row.password(), row.phone(),
-                row.avatar(), row.intro(), row.userRole(), row.registerTime()));
+        var saved = new UserRow(String.valueOf(users.lastInsertId()), row.userName(), row.password(),
+                row.phone(), row.avatar(), row.intro(), row.role(), row.status(), row.registerTime());
+        return UserView.from(saved);
     }
 
     public UserRow authenticate(String phone, String password) {
         checkPasswordLength(password);
         UserRow row = users.findByPhone(phone);
         boolean matches = encoder.matches(password, row == null ? dummyHash : row.password());
-        if (row == null || !matches || (row.userRole() != 0 && row.userRole() != 1)) {
+        if (row == null || !matches || (row.role() != 0 && row.role() != 1)) {
             throw new BusinessException(HttpStatus.UNAUTHORIZED, "BAD_CREDENTIALS", "手机号或密码不正确");
         }
-        if (row.status() != 0) {
-            throw new BusinessException(HttpStatus.FORBIDDEN, "ACCOUNT_BANNED", "账号已封禁");
+        // 封禁用户无法登录（status=1），仅在密码验证通过后判定，避免泄露封禁状态。
+        if (row.status() != StatusCodes.USER_NORMAL) {
+            throw new BusinessException(HttpStatus.FORBIDDEN, "USER_BANNED", "账号已被封禁，请联系管理员");
         }
         return row;
     }
@@ -65,45 +67,15 @@ public class AccountService {
     }
 
     @Transactional
-    public UserView updateProfile(String id, String name, String avatar, String intro, String address) {
+    public UserView updateProfile(String id, String name, String avatar, String intro) {
         current(id);
         if (name != null && name.isBlank()) {
             throw new BusinessException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "昵称不能为空");
         }
-        if (name != null || avatar != null || intro != null || address != null) {
-            users.updateProfile(id, name, avatar, intro, address);
+        if (name != null || avatar != null || intro != null) {
+            users.updateProfile(id, name, avatar, intro);
         }
         return current(id);
-    }
-
-    @Transactional
-    public void changePassword(String id, String oldPassword, String newPassword) {
-        checkPasswordLength(oldPassword); checkPasswordLength(newPassword);
-        UserRow row = users.findById(id);
-        if (row == null || !encoder.matches(oldPassword, row.password())) {
-            throw new BusinessException(HttpStatus.BAD_REQUEST, "BAD_PASSWORD", "原密码不正确");
-        }
-        if (users.updatePassword(id, row.password(), encoder.encode(newPassword)) != 1) {
-            throw new BusinessException(HttpStatus.CONFLICT, "CONFLICT", "密码已变更，请重新登录");
-        }
-    }
-    @Transactional
-    public void resetPassword(String id, String newPassword) {
-        checkPasswordLength(newPassword);
-        UserRow row = users.findById(id);
-        if (row == null) { throw new BusinessException(HttpStatus.NOT_FOUND, "NOT_FOUND", "账号不存在"); }
-        if (users.updatePassword(row.userId(), row.password(), encoder.encode(newPassword)) != 1) {
-            throw new BusinessException(HttpStatus.CONFLICT, "CONFLICT", "账号密码已变更，请刷新后重试");
-        }
-    }
-
-    /** Session stores an opaque credential version, never a password or database password hash. */
-    public static String credentialVersion(UserRow row) {
-        try {
-            var digest = java.security.MessageDigest.getInstance("SHA-256");
-            return java.util.HexFormat.of().formatHex(digest.digest(
-                    (row.userId() + ":" + row.password() + ":" + row.userRole() + ":" + row.status()).getBytes(StandardCharsets.UTF_8)));
-        } catch (java.security.NoSuchAlgorithmException ex) { throw new IllegalStateException(ex); }
     }
 
     private void checkPasswordLength(String password) {
@@ -116,7 +88,6 @@ public class AccountService {
         return new BusinessException(HttpStatus.CONFLICT, "PHONE_EXISTS", "手机号已注册");
     }
 
-    public record Principal(String userId, String credentialVersion) implements Serializable {
-        public Principal(String userId) { this(userId, null); }
-    }
+    /** Session 仅保存身份，不保存密码或完整用户行。 */
+    public record Principal(String userId) implements Serializable { }
 }

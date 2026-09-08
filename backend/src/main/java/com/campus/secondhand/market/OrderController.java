@@ -43,4 +43,26 @@ public class OrderController {
             @Valid @ModelAttribute PageQuery page) {
         return ApiResponse.success(orders.userEvaluations(CurrentUser.id(auth), page));
     }
+    /** 用户收到的评价（个人主页），公开读取。 */
+    @GetMapping("/api/users/{id}/evaluations")
+    public ApiResponse<PageResult<Evaluation>> received(@PathVariable String id, @Valid @ModelAttribute PageQuery page) {
+        return ApiResponse.success(orders.sellerEvaluations(id, page));
+    }
+    @GetMapping("/api/admin/orders")
+    public ApiResponse<PageResult<Order>> adminList(@RequestParam(required = false) Integer status,
+            @Valid @ModelAttribute PageQuery page) {
+        return ApiResponse.success(orders.adminList(status, page));
+    }
+    @GetMapping("/api/admin/orders/{id}")
+    public ApiResponse<Order> adminDetail(@PathVariable String id) {
+        return ApiResponse.success(orders.adminDetail(id));
+    }
+    @GetMapping("/api/admin/evaluations")
+    public ApiResponse<PageResult<Evaluation>> adminEvaluations(@Valid @ModelAttribute PageQuery page) {
+        return ApiResponse.success(orders.adminEvaluations(page));
+    }
+    @DeleteMapping("/api/admin/evaluations/{id}")
+    public ApiResponse<Void> deleteEvaluation(@PathVariable String id) {
+        orders.deleteEvaluation(id); return ApiResponse.success(null);
+    }
 }

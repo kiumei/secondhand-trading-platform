@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.campus.secondhand.category.CategoryMapper">
+  <!-- 两级分类字段以 db/secondhand_full.sql 为准；parent_id=0 表示一级分类，sort 控制展示顺序。 -->
   <resultMap id="category" type="com.campus.secondhand.category.CategoryMapper$Category">
     <constructor>
-      <idArg column="category_id" javaType="java.lang.String"/>
+      <idArg column="cate_id" javaType="java.lang.String"/>
       <arg column="cate_name" javaType="java.lang.String"/>
-      <arg column="cate_desc" javaType="java.lang.String"/>
-      <arg column="parent_id" javaType="java.lang.String"/>
+      <arg column="parent_id" javaType="java.lang.Integer"/>
       <arg column="sort" javaType="java.lang.Integer"/>
     </constructor>
   </resultMap>
   <select id="findAll" resultMap="category">
-    SELECT cate_id AS category_id, cate_name, NULL AS cate_desc,parent_id,sort FROM category ORDER BY sort, cate_id
+    SELECT cate_id, cate_name, parent_id, sort FROM category ORDER BY sort ASC, cate_id ASC
   </select>
 </mapper>
