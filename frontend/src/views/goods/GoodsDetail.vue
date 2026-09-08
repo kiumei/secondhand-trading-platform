@@ -5,7 +5,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getGoods } from '@/api/goods'
 import { getUser } from '@/api/user'
 import { listEvaluates, createEvaluate } from '@/api/evaluate'
-import { createOrder } from '@/api/order'
+import { createOrder, listOrders } from '@/api/order'
 import { createReport } from '@/api/report'
 import { useUserStore } from '@/stores/user'
 import { useFavoriteStore } from '@/stores/favorite'
@@ -20,16 +20,28 @@ const goods = ref<Goods | null>(null)
 const seller = ref<User | null>(null)
 const evaluates = ref<Evaluate[]>([])
 const activeImg = ref(0)
+const buyDialogVisible = ref(false)
+const buyAddress = ref('')
 
 const goodsId = computed(() => Number(route.params.id))
-const isSeller = computed(() => goods.value?.sellerId === userStore.currentUser?.id)
+const isSeller = computed(() => goods.value?.publishUserId === userStore.currentUser?.userId)
 const faved = computed(() => favoriteStore.isFavorite(goodsId.value))
 
+const tradeTypeText = computed(() => {
+  const map: Record<number, string> = { 1: '邮寄', 2: '自提', 3: '两者' }
+  return map[goods.value?.tradeType ?? 2] ?? ''
+})
+
+const qualityText = computed(() => {
+  const map: Record<number, string> = { 1: '全新', 2: '9成新', 3: '8成新', 4: '7成新', 5: '6成新及以下' }
+  return goods.value?.qualityLevel ? map[goods.value.qualityLevel] : '未填写'
+})
+
 async function load() {
-  goods.value = await getGoods(goodsId.value) ?? null
+  goods.value = (await getGoods(goodsId.value)) ?? null
   if (goods.value) {
-    seller.value = (await getUser(goods.value.sellerId)) ?? null
-    evaluates.value = await listEvaluates(goods.value.id)
+    seller.value = (await getUser(goods.value.publishUserId)) ?? null
+    evaluates.value = await listEvaluates(goods.value.goodsId)
   }
 }
 
@@ -42,18 +54,30 @@ function toggleFavorite() {
   ElMessage.success(faved.value ? '已取消收藏' : '已收藏')
 }
 
-async function onBuy() {
+function openBuy() {
   if (!userStore.isLoggedIn) {
     router.push({ name: 'login', query: { redirect: route.fullPath } })
     return
   }
   if (!goods.value || isSeller.value) return
-  await createOrder({
-    goodsId: goods.value.id,
-    buyerId: userStore.currentUser!.id,
-    sellerId: goods.value.sellerId,
-    price: goods.value.price,
+  buyAddress.value = userStore.currentUser?.address ?? ''
+  buyDialogVisible.value = true
+}
+
+async function confirmBuy() {
+  if (!goods.value) return
+  const order = await createOrder({
+    goodsId: goods.value.goodsId,
+    buyerId: userStore.currentUser!.userId,
+    sellerId: goods.value.publishUserId,
+    orderPrice: goods.value.sellPrice,
+    shippingAddress: buyAddress.value,
   })
+  buyDialogVisible.value = false
+  if (!order) {
+    ElMessage.warning('该商品当前不可购买')
+    return
+  }
   ElMessage.success('下单成功，请到我的订单中支付')
   router.push({ name: 'orders' })
 }
@@ -64,8 +88,7 @@ async function onMessage() {
     return
   }
   if (!goods.value) return
-  // 跳转到消息界面，自动定位到卖家会话
-  router.push({ name: 'messages', query: { to: String(goods.value.sellerId) } })
+  router.push({ name: 'messages', query: { to: String(goods.value.publishUserId) } })
 }
 
 async function onReport() {
@@ -74,31 +97,59 @@ async function onReport() {
     return
   }
   if (!goods.value) return
-  const { value } = await ElMessageBox.prompt('举报原因', '举报商品', {
+  const { value } = await ElMessageBox.prompt('请填写举报原因', '举报商品', {
     confirmButtonText: '提交',
     cancelButtonText: '取消',
   })
-  await createReport({ goodsId: goods.value.id, userId: userStore.currentUser!.id, reason: value })
+  await createReport({
+    goodsId: goods.value.goodsId,
+    reportUserId: userStore.currentUser!.userId,
+    reportType: '违规商品',
+    reportContent: value,
+  })
   ElMessage.success('举报已提交')
 }
 
 async function onEvaluate() {
   if (!goods.value) return
-  const { value, action } = await ElMessageBox.prompt('评价内容', '评价', {
+  if (!userStore.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } })
+    return
+  }
+  // 评价必须绑定当前用户对该商品的已完成订单
+  const orders = await listOrders({ buyerId: userStore.currentUser!.userId })
+  const order = orders.find(
+    (o) => o.goodsId === goods.value!.goodsId && o.orderStatus === 3,
+  )
+  if (!order) {
+    ElMessage.warning('仅完成交易后可评价')
+    return
+  }
+  // 同一订单只能评价一次
+  const existing = await listEvaluates(goods.value.goodsId)
+  if (existing.some((e) => e.orderId === order.orderId)) {
+    ElMessage.warning('该订单已评价过')
+    return
+  }
+  const { value, action } = await ElMessageBox.prompt('请写下你的评价', '评价', {
     confirmButtonText: '提交',
     cancelButtonText: '取消',
     inputPlaceholder: '写下你的评价…',
   })
   if (action !== 'confirm') return
-  await createEvaluate({
-    orderId: 0,
-    goodsId: goods.value.id,
-    userId: userStore.currentUser!.id,
+  const ev = await createEvaluate({
+    orderId: order.orderId,
+    goodsId: goods.value.goodsId,
+    evaluateUserId: userStore.currentUser!.userId,
     score: 5,
-    content: value,
+    evaluateContent: value,
   })
+  if (!ev) {
+    ElMessage.warning('该订单已评价过')
+    return
+  }
   ElMessage.success('评价成功')
-  evaluates.value = await listEvaluates(goods.value.id)
+  evaluates.value = await listEvaluates(goods.value.goodsId)
 }
 
 onMounted(() => {
@@ -129,14 +180,16 @@ onMounted(() => {
       <div class="meta">
         <h1 class="title">{{ goods.title }}</h1>
         <div class="price-row">
-          <span class="price big">{{ goods.price }}</span>
+          <span class="price big">¥{{ goods.sellPrice }}</span>
           <span v-if="goods.originalPrice" class="original">原价 ¥{{ goods.originalPrice }}</span>
         </div>
         <div class="meta-row">
-          <span class="label">发布类型</span>
-          <el-tag :type="goods.type === 'sell' ? 'warning' : 'info'">
-            {{ goods.type === 'sell' ? '售卖' : '求购' }}
-          </el-tag>
+          <span class="label">交易方式</span>
+          <el-tag>{{ tradeTypeText }}</el-tag>
+        </div>
+        <div class="meta-row">
+          <span class="label">成色</span>
+          <span>{{ qualityText }}</span>
         </div>
         <div class="meta-row">
           <span class="label">浏览量</span>
@@ -144,13 +197,17 @@ onMounted(() => {
         </div>
         <div class="meta-row">
           <span class="label">发布时间</span>
-          <span>{{ goods.createdAt }}</span>
+          <span>{{ goods.publishTime }}</span>
+        </div>
+        <div v-if="goods.rejectReason" class="meta-row">
+          <span class="label">驳回原因</span>
+          <span class="reject">{{ goods.rejectReason }}</span>
         </div>
 
-        <div v-if="seller" class="seller-box" @click="router.push({ name: 'user-profile', params: { id: seller.id } })">
+        <div v-if="seller" class="seller-box" @click="router.push({ name: 'user-profile', params: { id: seller.userId } })">
           <el-avatar :size="40" :src="seller.avatar" />
           <div class="seller-info">
-            <div class="seller-name">{{ seller.nickname }}</div>
+            <div class="seller-name">{{ seller.userName }}</div>
             <div class="seller-sub">卖家 · 点击查看主页</div>
           </div>
         </div>
@@ -159,8 +216,8 @@ onMounted(() => {
           <el-button
             type="primary"
             size="large"
-            :disabled="isSeller || goods.status !== 'on'"
-            @click="onBuy"
+            :disabled="isSeller || !goods.purchasable"
+            @click="openBuy"
           >
             立即购买
           </el-button>
@@ -179,7 +236,7 @@ onMounted(() => {
 
     <div class="section">
       <h2 class="section-title">商品描述</h2>
-      <p class="desc">{{ goods.desc }}</p>
+      <div class="desc" v-html="goods.goodsDesc"></div>
     </div>
 
     <div class="section">
@@ -188,18 +245,43 @@ onMounted(() => {
         <el-button size="small" type="primary" link @click="onEvaluate">写评价</el-button>
       </div>
       <div v-if="evaluates.length" class="evaluate-list">
-        <div v-for="e in evaluates" :key="e.id" class="evaluate-item">
+        <div v-for="e in evaluates" :key="e.evaluateId" class="evaluate-item">
           <div class="evaluate-top">
             <el-rate :model-value="e.score" disabled />
-            <span class="evaluate-time">{{ e.createdAt }}</span>
+            <span class="evaluate-time">{{ e.evaluateTime }}</span>
           </div>
-          <p class="evaluate-content">{{ e.content }}</p>
+          <p class="evaluate-content">{{ e.evaluateContent }}</p>
         </div>
       </div>
       <el-empty v-else description="暂无评价" :image-size="60" />
     </div>
   </div>
   <el-skeleton v-else class="page-container" :rows="6" animated />
+
+  <!-- 下单确认弹窗 -->
+  <el-dialog v-model="buyDialogVisible" title="确认订单" width="480px">
+    <div v-if="goods" class="buy-confirm">
+      <div class="buy-goods">
+        <img :src="goods.images[0]" class="buy-img" />
+        <div>
+          <div class="buy-title">{{ goods.title }}</div>
+          <div class="buy-price">¥{{ goods.sellPrice }}</div>
+        </div>
+      </div>
+      <el-form label-width="80px" class="buy-form">
+        <el-form-item label="收货人">
+          <span>{{ userStore.currentUser?.userName }}</span>
+        </el-form-item>
+        <el-form-item label="收货地址">
+          <el-input v-model="buyAddress" placeholder="请输入收货地址" />
+        </el-form-item>
+      </el-form>
+    </div>
+    <template #footer>
+      <el-button @click="buyDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="confirmBuy">确认下单</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <style scoped>
@@ -264,6 +346,7 @@ onMounted(() => {
 .price.big {
   font-size: 32px;
   font-weight: 700;
+  color: var(--color-primary);
 }
 .original {
   color: var(--text-sub);
@@ -279,6 +362,9 @@ onMounted(() => {
   color: var(--text-sub);
   width: 70px;
   flex-shrink: 0;
+}
+.reject {
+  color: #f56c6c;
 }
 .seller-box {
   display: flex;
@@ -327,7 +413,6 @@ onMounted(() => {
 .desc {
   color: var(--text-main);
   line-height: 1.8;
-  white-space: pre-wrap;
 }
 .evaluate-item {
   padding: var(--space-3) 0;
@@ -345,5 +430,32 @@ onMounted(() => {
 }
 .evaluate-content {
   color: var(--text-main);
+}
+.buy-confirm {
+  padding: 0 4px;
+}
+.buy-goods {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+.buy-img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.buy-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.buy-price {
+  color: var(--color-primary);
+  font-weight: 700;
+  margin-top: 6px;
+}
+.buy-form {
+  margin-top: 16px;
 }
 </style>

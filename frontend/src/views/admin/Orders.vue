@@ -10,19 +10,20 @@ const goodsMap = ref<Record<number, Goods>>({})
 const userNames = ref<Record<number, string>>({})
 const loading = ref(false)
 
-const statusText: Record<string, string> = {
-  unpaid: '待支付',
-  paid: '待发货',
-  shipped: '运输中',
-  done: '已完成',
-  cancelled: '已取消',
+const statusText: Record<number, string> = {
+  0: '待付款',
+  1: '待发货',
+  2: '待收货',
+  3: '已完成',
+  4: '已取消',
+  5: '售后',
 }
 
 async function load() {
   loading.value = true
   orders.value = await listOrders()
   const all = await listGoods()
-  goodsMap.value = Object.fromEntries(all.map((g) => [g.id, g]))
+  goodsMap.value = Object.fromEntries(all.map((g) => [g.goodsId, g]))
   const ids = new Set<number>()
   orders.value.forEach((o) => {
     ids.add(o.buyerId)
@@ -30,7 +31,7 @@ async function load() {
   })
   for (const id of ids) {
     const u = await getUser(id)
-    if (u) userNames.value[id] = u.nickname
+    if (u) userNames.value[id] = u.userName
   }
   loading.value = false
 }
@@ -41,8 +42,8 @@ onMounted(load)
 <template>
   <div class="orders">
     <el-table v-loading="loading" :data="orders" style="width: 100%">
-      <el-table-column prop="id" label="订单号" width="90">
-        <template #default="{ row }">#{{ row.id }}</template>
+      <el-table-column prop="orderId" label="订单号" width="90">
+        <template #default="{ row }">#{{ row.orderId }}</template>
       </el-table-column>
       <el-table-column label="商品" min-width="180">
         <template #default="{ row }">{{ goodsMap[row.goodsId]?.title ?? `#${row.goodsId}` }}</template>
@@ -54,12 +55,12 @@ onMounted(load)
         <template #default="{ row }">{{ userNames[row.sellerId] }}</template>
       </el-table-column>
       <el-table-column label="金额" width="100">
-        <template #default="{ row }"><span class="price">{{ row.price }}</span></template>
+        <template #default="{ row }"><span class="price">¥{{ row.orderPrice }}</span></template>
       </el-table-column>
       <el-table-column label="状态" width="100">
-        <template #default="{ row }">{{ statusText[row.status] }}</template>
+        <template #default="{ row }">{{ statusText[row.orderStatus] }}</template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="下单时间" width="180" />
+      <el-table-column prop="createTime" label="下单时间" width="180" />
     </el-table>
   </div>
 </template>

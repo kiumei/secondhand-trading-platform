@@ -1,29 +1,28 @@
 import { getDB, persist, nextId, delay } from './mock/db'
 import type { User } from '@/types'
 
-export function login(username: string, password: string): Promise<User | null> {
-  const u = getDB().users.find(
-    (x) => x.username === username && x.password === password,
-  )
+export function login(phone: string, password: string): Promise<User | null> {
+  const u = getDB().users.find((x) => x.phone === phone && x.password === password)
   // 封禁用户不能登录
-  if (u?.banned) return delay(null)
+  if (u?.status !== 0) return delay(null)
   return delay(u ?? null)
 }
 
 export function register(input: {
-  username: string
-  password: string
-  nickname: string
   phone: string
+  password: string
+  userName: string
 }): Promise<User | null> {
   const db = getDB()
-  if (db.users.some((x) => x.username === input.username)) return delay(null)
+  if (db.users.some((x) => x.phone === input.phone)) return delay(null)
   const user: User = {
-    id: nextId('user'),
+    userId: nextId('user'),
     ...input,
-    address: '',
-    role: 'student',
-    avatar: `https://picsum.photos/seed/avatar${input.username}/200/200`,
+    avatar: `https://picsum.photos/seed/avatar${input.phone}/200/200`,
+    intro: '',
+    role: 0,
+    status: 0,
+    registerTime: new Date().toLocaleString('zh-CN'),
   }
   db.users.push(user)
   persist()
@@ -32,10 +31,10 @@ export function register(input: {
 
 export function updateProfile(
   id: number,
-  patch: Partial<Pick<User, 'nickname' | 'phone' | 'address' | 'avatar'>>,
+  patch: Partial<Pick<User, 'userName' | 'avatar' | 'intro' | 'address'>>,
 ): Promise<void> {
   const db = getDB()
-  const u = db.users.find((x) => x.id === id)
+  const u = db.users.find((x) => x.userId === id)
   if (u) {
     Object.assign(u, patch)
     persist()
@@ -49,7 +48,7 @@ export function updatePassword(
   newPassword: string,
 ): Promise<boolean> {
   const db = getDB()
-  const u = db.users.find((x) => x.id === id)
+  const u = db.users.find((x) => x.userId === id)
   if (!u || u.password !== oldPassword) return delay(false)
   u.password = newPassword
   persist()
@@ -57,7 +56,7 @@ export function updatePassword(
 }
 
 export function getUser(id: number): Promise<User | undefined> {
-  return delay(getDB().users.find((x) => x.id === id))
+  return delay(getDB().users.find((x) => x.userId === id))
 }
 
 export function listUsers(): Promise<User[]> {
@@ -66,16 +65,25 @@ export function listUsers(): Promise<User[]> {
 
 export function deleteUser(id: number): Promise<void> {
   const db = getDB()
-  db.users = db.users.filter((x) => x.id !== id)
+  db.users = db.users.filter((x) => x.userId !== id)
   persist()
   return delay(undefined)
 }
 
-export function setBanned(id: number, banned: boolean): Promise<void> {
+export function setUserStatus(id: number, status: 0 | 1): Promise<void> {
   const db = getDB()
-  const u = db.users.find((x) => x.id === id)
+  const u = db.users.find((x) => x.userId === id)
   if (u) {
-    u.banned = banned
+    u.status = status
+    if (status === 1) {
+      // 封禁 → 名下 0/1 状态商品强制下架（对应触发器 trg_user_ban_off_goods）
+      for (const g of db.goods) {
+        if (g.publishUserId === id && (g.goodsStatus === 0 || g.goodsStatus === 1)) {
+          g.goodsStatus = 2
+          g.purchasable = false
+        }
+      }
+    }
     persist()
   }
   return delay(undefined)
@@ -83,19 +91,9 @@ export function setBanned(id: number, banned: boolean): Promise<void> {
 
 export function resetPassword(id: number, newPassword: string): Promise<void> {
   const db = getDB()
-  const u = db.users.find((x) => x.id === id)
+  const u = db.users.find((x) => x.userId === id)
   if (u) {
     u.password = newPassword
-    persist()
-  }
-  return delay(undefined)
-}
-
-export function setOnline(id: number, online: boolean): Promise<void> {
-  const db = getDB()
-  const u = db.users.find((x) => x.id === id)
-  if (u) {
-    u.online = online
     persist()
   }
   return delay(undefined)

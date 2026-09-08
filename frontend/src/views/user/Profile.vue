@@ -5,15 +5,26 @@ import { useUserStore } from '@/stores/user'
 import { listGoods } from '@/api/goods'
 import type { Goods } from '@/types'
 import GoodsGrid from '@/components/GoodsGrid.vue'
+import { flattenLocations } from '@/constants/locations'
 
 const userStore = useUserStore()
 
 const myGoods = ref<Goods[]>([])
 const profileForm = reactive({
-  nickname: userStore.currentUser?.nickname ?? '',
-  phone: userStore.currentUser?.phone ?? '',
+  userName: userStore.currentUser?.userName ?? '',
+  intro: userStore.currentUser?.intro ?? '',
   address: userStore.currentUser?.address ?? '',
 })
+
+const addressOptions = flattenLocations()
+function queryAddress(query: string, cb: (list: { value: string }[]) => void) {
+  const kw = query.trim()
+  if (!kw) {
+    cb([])
+    return
+  }
+  cb(addressOptions.filter((a) => a.includes(kw)).slice(0, 10).map((a) => ({ value: a })))
+}
 
 const pwdForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
 
@@ -38,7 +49,7 @@ async function changePassword() {
 
 async function loadMyGoods() {
   if (!userStore.currentUser) return
-  myGoods.value = await listGoods({ sellerId: userStore.currentUser.id })
+  myGoods.value = await listGoods({ sellerId: userStore.currentUser.userId })
 }
 loadMyGoods()
 </script>
@@ -48,8 +59,8 @@ loadMyGoods()
     <div class="profile-card">
       <el-avatar :size="72" :src="userStore.currentUser?.avatar" />
       <div class="profile-info">
-        <h2 class="name">{{ userStore.currentUser?.nickname }}</h2>
-        <p class="username">@{{ userStore.currentUser?.username }}</p>
+        <h2 class="name">{{ userStore.currentUser?.userName }}</h2>
+        <p class="username">{{ userStore.currentUser?.phone }}</p>
       </div>
       <el-tag :type="userStore.isAdmin ? 'danger' : 'warning'">
         {{ userStore.isAdmin ? '管理员' : '学生' }}
@@ -61,13 +72,19 @@ loadMyGoods()
         <h3 class="panel-title">个人资料</h3>
         <el-form label-width="70px">
           <el-form-item label="昵称">
-            <el-input v-model="profileForm.nickname" />
+            <el-input v-model="profileForm.userName" />
           </el-form-item>
-          <el-form-item label="手机号">
-            <el-input v-model="profileForm.phone" />
+          <el-form-item label="简介">
+            <el-input v-model="profileForm.intro" type="textarea" :rows="3" placeholder="介绍一下自己" />
           </el-form-item>
           <el-form-item label="收货地址">
-            <el-input v-model="profileForm.address" placeholder="填写收货地址" />
+            <el-autocomplete
+              v-model="profileForm.address"
+              :fetch-suggestions="queryAddress"
+              placeholder="输入或选择收货地址"
+              clearable
+              style="width: 100%"
+            />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="saveProfile">保存</el-button>

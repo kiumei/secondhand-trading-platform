@@ -101,11 +101,6 @@ const router = createRouter({
           component: () => import('@/views/admin/Reports.vue'),
         },
         {
-          path: 'bulletin',
-          name: 'admin-bulletin',
-          component: () => import('@/views/admin/Bulletin.vue'),
-        },
-        {
           path: 'evaluates',
           name: 'admin-evaluates',
           component: () => import('@/views/admin/Evaluates.vue'),
@@ -115,17 +110,7 @@ const router = createRouter({
           name: 'admin-orders',
           component: () => import('@/views/admin/Orders.vue'),
         },
-        {
-          path: 'settings',
-          name: 'admin-settings',
-          component: () => import('@/views/admin/Settings.vue'),
-        },
       ],
-    },
-    {
-      path: '/setup',
-      name: 'setup',
-      component: () => import('@/views/setup/SetupWizard.vue'),
     },
     {
       path: '/:pathMatch(.*)*',

@@ -13,60 +13,56 @@ const activeGroup = ref<number>(0)
 const loading = ref(false)
 
 // 排序
-type SortKey = 'default' | 'price-asc' | 'price-desc' | 'newest' | 'want'
+type SortKey = 'default' | 'price-asc' | 'price-desc' | 'newest'
 const sortBy = ref<SortKey>('default')
 const sortOptions: { key: SortKey; label: string }[] = [
   { key: 'default', label: '综合排序' },
   { key: 'newest', label: '最新发布' },
   { key: 'price-asc', label: '价格从低到高' },
   { key: 'price-desc', label: '价格从高到低' },
-  { key: 'want', label: '最想要' },
 ]
 
 const sortedGoods = computed(() => {
   const list = goods.value.slice()
   switch (sortBy.value) {
     case 'price-asc':
-      return list.sort((a, b) => a.price - b.price)
+      return list.sort((a, b) => a.sellPrice - b.sellPrice)
     case 'price-desc':
-      return list.sort((a, b) => b.price - a.price)
+      return list.sort((a, b) => b.sellPrice - a.sellPrice)
     case 'newest':
-      return list.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    case 'want':
-      return list.sort((a, b) => (b.wantCount ?? 0) - (a.wantCount ?? 0))
+      return list.sort((a, b) => b.publishTime.localeCompare(a.publishTime))
     default:
       return list
   }
 })
 
-// 左侧导航：4 个实物父类（不含校园服务）
-const navGroups = computed(() => categoryGroups.filter((g) => !g.service))
+// 左侧导航：4 个实物父类
+const navGroups = computed(() => categoryGroups)
 
 const activeGroupName = computed(
-  () => categoryGroups.find((g) => g.id === activeGroup.value)?.name ?? '',
+  () => categoryGroups.find((g) => g.categoryId === activeGroup.value)?.cateName ?? '',
 )
 
 function featGoods(groupId: number): Goods[] {
   const ids = getSubIds(groupId)
-  return allGoods.value.filter((g) => ids.includes(g.categoryId)).slice(0, 3)
+  return allGoods.value.filter((g) => ids.includes(g.cateId)).slice(0, 3)
 }
 
 async function loadAll() {
   loading.value = true
-  allGoods.value = await listGoods({ status: 'on' })
+  allGoods.value = await listGoods({ status: 1 }) // 上架
   goods.value = allGoods.value
   loading.value = false
 }
 
-async function switchGroup(id: number) {
+function switchGroup(id: number) {
   activeGroup.value = id
-  loading.value = true
   if (id === 0) {
     goods.value = allGoods.value
   } else {
-    goods.value = await listGoods({ categoryIds: getSubIds(id), status: 'on' })
+    const ids = getSubIds(id)
+    goods.value = allGoods.value.filter((g) => ids.includes(g.cateId))
   }
-  loading.value = false
 }
 
 function goGroupGoods(groupId: number) {
@@ -95,13 +91,13 @@ onMounted(loadAll)
         </div>
         <div
           v-for="g in navGroups"
-          :key="g.id"
+          :key="g.categoryId"
           class="side-nav-item"
-          :class="{ active: activeGroup === g.id }"
-          @click="switchGroup(g.id)"
+          :class="{ active: activeGroup === g.categoryId }"
+          @click="switchGroup(g.categoryId)"
         >
           <el-icon :size="18"><component :is="g.icon" /></el-icon>
-          <span>{{ g.name }}</span>
+          <span>{{ g.cateName }}</span>
         </div>
       </aside>
 
@@ -155,24 +151,24 @@ onMounted(loadAll)
           <div class="feat-grid">
             <div
               v-for="f in navGroups"
-              :key="f.id"
+              :key="f.categoryId"
               class="feat-card"
               :style="{ background: f.tint }"
-              @click="goGroupGoods(f.id)"
+              @click="goGroupGoods(f.categoryId)"
             >
               <div class="feat-head">
                 <span class="feat-name" :style="{ color: f.color }">
                   <el-icon :size="16" style="margin-right: 4px"><component :is="f.icon" /></el-icon>
-                  {{ f.name }}
+                  {{ f.cateName }}
                 </span>
-                <span class="feat-sub">{{ f.children.map((c) => c.name).join(' · ') }}</span>
+                <span class="feat-sub">{{ f.children.map((c) => c.cateName).join(' · ') }}</span>
               </div>
               <div class="feat-thumbs">
-                <div v-for="g in featGoods(f.id)" :key="g.id" class="feat-thumb">
+                <div v-for="g in featGoods(f.categoryId)" :key="g.goodsId" class="feat-thumb">
                   <img :src="g.images[0]" :alt="g.title" />
-                  <span class="feat-price">{{ g.price }}</span>
+                  <span class="feat-price">¥{{ g.sellPrice }}</span>
                 </div>
-                <el-empty v-if="!featGoods(f.id).length" description="暂无" :image-size="40" />
+                <el-empty v-if="!featGoods(f.categoryId).length" description="暂无" :image-size="40" />
               </div>
             </div>
           </div>
@@ -322,9 +318,6 @@ onMounted(loadAll)
 }
 .feat-sub {
   font-size: var(--text-xs);
-  color: var(--text-sub);
-}
-.feat-arrow {
   color: var(--text-sub);
 }
 .feat-thumbs {

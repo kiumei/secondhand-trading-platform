@@ -12,10 +12,8 @@ const menus = [
   { path: '/admin/categories', icon: 'Menu', label: '分类管理' },
   { path: '/admin/users', icon: 'User', label: '用户管理' },
   { path: '/admin/reports', icon: 'Warning', label: '举报处理' },
-  { path: '/admin/bulletin', icon: 'Bell', label: '公告管理' },
   { path: '/admin/evaluates', icon: 'Star', label: '评价管理' },
   { path: '/admin/orders', icon: 'List', label: '订单管理' },
-  { path: '/admin/settings', icon: 'Setting', label: '系统设置' },
 ]
 
 function go(path: string) {
@@ -49,7 +47,7 @@ function backHome() {
       <header class="admin-header">
         <div class="crumb">{{ menus.find((m) => m.path === route.path)?.label || '后台' }}</div>
         <div class="admin-user">
-          <span>{{ userStore.currentUser?.nickname }}</span>
+          <span>{{ userStore.currentUser?.userName }}</span>
           <el-button link @click="backHome">返回前台</el-button>
         </div>
       </header>

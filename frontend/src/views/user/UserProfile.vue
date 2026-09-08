@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { getUser } from '@/api/user'
 import { listGoods } from '@/api/goods'
 import { listEvaluates } from '@/api/evaluate'
@@ -19,7 +18,7 @@ const evaluates = ref<Evaluate[]>([])
 const loading = ref(false)
 
 const userId = computed(() => Number(route.params.id))
-const isSelf = computed(() => userStore.currentUser?.id === userId.value)
+const isSelf = computed(() => userStore.currentUser?.userId === userId.value)
 const avgScore = computed(() => {
   if (!evaluates.value.length) return 0
   return evaluates.value.reduce((s, e) => s + e.score, 0) / evaluates.value.length
@@ -29,11 +28,11 @@ async function load() {
   loading.value = true
   profile.value = (await getUser(userId.value)) ?? null
   if (profile.value) {
-    goods.value = await listGoods({ sellerId: profile.value.id, status: 'on' })
-    const sold = await listGoods({ sellerId: profile.value.id })
+    goods.value = await listGoods({ sellerId: profile.value.userId, status: 1 })
+    const sold = await listGoods({ sellerId: profile.value.userId })
     const list: Evaluate[] = []
     for (const g of sold) {
-      list.push(...(await listEvaluates(g.id)))
+      list.push(...(await listEvaluates(g.goodsId)))
     }
     evaluates.value = list
   }
@@ -63,13 +62,12 @@ onMounted(load)
         <el-avatar :size="88" :src="profile.avatar" class="avatar" />
         <div class="header-info">
           <div class="name-row">
-            <h1 class="name">{{ profile.nickname }}</h1>
-            <el-tag :type="profile.role === 'admin' ? 'danger' : 'warning'" size="small">
-              {{ profile.role === 'admin' ? '管理员' : '学生' }}
+            <h1 class="name">{{ profile.userName }}</h1>
+            <el-tag :type="profile.role === 1 ? 'danger' : 'warning'" size="small">
+              {{ profile.role === 1 ? '管理员' : '学生' }}
             </el-tag>
           </div>
-          <p class="username">@{{ profile.username }}</p>
-          <p v-if="profile.bio" class="bio">{{ profile.bio }}</p>
+          <p v-if="profile.intro" class="bio">{{ profile.intro }}</p>
         </div>
         <div class="header-actions">
           <el-button v-if="isSelf" type="primary" @click="goEdit">编辑资料</el-button>
@@ -119,12 +117,12 @@ onMounted(load)
       <div class="panel">
         <h3 class="panel-title">收到的评价（{{ evaluates.length }}）</h3>
         <div v-if="evaluates.length" class="eval-list">
-          <div v-for="e in evaluates" :key="e.id" class="eval-item">
+          <div v-for="e in evaluates" :key="e.evaluateId" class="eval-item">
             <div class="eval-top">
               <el-rate :model-value="e.score" disabled size="small" />
-              <span class="eval-time">{{ e.createdAt }}</span>
+              <span class="eval-time">{{ e.evaluateTime }}</span>
             </div>
-            <p class="eval-content">{{ e.content }}</p>
+            <p class="eval-content">{{ e.evaluateContent }}</p>
           </div>
         </div>
         <el-empty v-else description="暂无评价" :image-size="60" />
@@ -163,10 +161,6 @@ onMounted(load)
   font-size: var(--text-xl);
   font-weight: 600;
   color: var(--color-ink);
-}
-.username {
-  color: var(--text-sub);
-  margin-top: var(--space-1);
 }
 .bio {
   color: var(--text-main);

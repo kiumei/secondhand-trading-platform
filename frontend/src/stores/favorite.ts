@@ -12,14 +12,14 @@ export const useFavoriteStore = defineStore('favorite', () => {
     const userStore = useUserStore()
     if (!userStore.currentUser) return
     loading.value = true
-    favorites.value = await favoriteApi.listFavorites(userStore.currentUser.id)
+    favorites.value = await favoriteApi.listFavorites(userStore.currentUser.userId)
     loading.value = false
   }
 
   async function toggle(goodsId: number) {
     const userStore = useUserStore()
     if (!userStore.currentUser) return
-    const uid = userStore.currentUser.id
+    const uid = userStore.currentUser.userId
     const exist = favorites.value.some((f) => f.goodsId === goodsId)
     if (exist) {
       await favoriteApi.removeFavorite(uid, goodsId)
@@ -27,10 +27,10 @@ export const useFavoriteStore = defineStore('favorite', () => {
     } else {
       await favoriteApi.addFavorite(uid, goodsId)
       favorites.value.unshift({
-        id: Date.now(),
+        favoriteId: Date.now(),
         userId: uid,
         goodsId,
-        createdAt: new Date().toLocaleString('zh-CN'),
+        createTime: new Date().toLocaleString('zh-CN'),
       })
     }
   }
