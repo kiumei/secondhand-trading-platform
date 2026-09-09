@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
 
 class AccountSessionTest {
     @AfterEach void cleanup() { SecurityContextHolder.clearContext(); }
-    private UserRow row(String hash) { return new UserRow("101", "同学", hash, "13800000000", null, null, 0, null); }
+    private UserRow row(String hash) { return new UserRow("101", "同学", hash, "13800000000", null, null, 0, 0, null); }
     private void authenticate(UserRow row) {
         SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
                 new AccountService.Principal(row.userId(), AccountService.credentialVersion(row)), null,
@@ -28,7 +28,7 @@ class AccountSessionTest {
         var encoder = new BCryptPasswordEncoder();
         var original = row(encoder.encode("old-password"));
         when(users.findById("101")).thenReturn(original);
-        when(users.updatePassword(eq("101"), eq(original.password()), any())).thenAnswer(call -> {
+        when(users.changePassword(eq("101"), eq(original.password()), any())).thenAnswer(call -> {
             String newHash = call.getArgument(2);
             assertThat(encoder.matches("new-password", newHash)).isTrue();
             when(users.findById("101")).thenReturn(row(newHash));
@@ -57,14 +57,14 @@ class AccountSessionTest {
         assertThat(chain.getRequest()).isSameAs(request);
         assertThatThrownBy(() -> new AccountService(users, encoder).changePassword("101", "wrong", "new"))
                 .isInstanceOf(BusinessException.class);
-        verify(users, never()).updatePassword(any(), any(), any());
+        verify(users, never()).changePassword(any(), any(), any());
     }
     @Test void bannedAccountCannotLoginAndExistingSessionIsInvalidated() throws Exception {
         var users = mock(UserMapper.class);
         var encoder = new BCryptPasswordEncoder();
         var original = row(encoder.encode("correct"));
         var banned = new UserRow(original.userId(), original.userName(), original.password(), original.phone(),
-                null, null, 0, null, 1);
+                null, null, 0, 1, null);
         when(users.findByPhone(original.phone())).thenReturn(banned);
         when(users.findById(original.userId())).thenReturn(banned);
         assertThatThrownBy(() -> new AccountService(users, encoder).authenticate(original.phone(), "correct"))
@@ -83,7 +83,7 @@ class AccountSessionTest {
         var users = mock(UserMapper.class);
         var encoder = new BCryptPasswordEncoder();
         when(users.findById("101")).thenReturn(new UserRow("101", "同学", "hash", "13800000000",
-                null, null, 0, null, 0, "校区1栋"));
+                null, null, 0, 0, null, "校区1栋"));
         var service = new AccountService(users, encoder);
         assertThat(service.current("101").address()).isEqualTo("校区1栋");
         service.updateProfile("101", null, null, null, "校区2栋");

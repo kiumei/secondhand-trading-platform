@@ -10,17 +10,16 @@ const userStore = useUserStore()
 const formRef = ref()
 const loading = ref(false)
 const form = reactive({
-  username: '',
+  phone: '',
   password: '',
   confirmPassword: '',
-  nickname: '',
-  phone: '',
+  userName: '',
 })
 
 const rules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '长度 3-20 个字符', trigger: 'blur' },
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1\d{10}$/, message: '手机号格式不正确', trigger: 'blur' },
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -35,11 +34,7 @@ const rules = {
       trigger: 'blur',
     },
   ],
-  nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1\d{10}$/, message: '手机号格式不正确', trigger: 'blur' },
-  ],
+  userName: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
 }
 
 async function submit() {
@@ -47,17 +42,16 @@ async function submit() {
   await formRef.value.validate()
   loading.value = true
   const ok = await userStore.register({
-    username: form.username,
-    password: form.password,
-    nickname: form.nickname,
     phone: form.phone,
+    password: form.password,
+    userName: form.userName,
   })
   loading.value = false
   if (ok) {
     ElMessage.success('注册成功')
     router.push({ name: 'home' })
   } else {
-    ElMessage.error('用户名已存在')
+    ElMessage.error('手机号已存在')
   }
 }
 </script>
@@ -69,8 +63,10 @@ async function submit() {
       <h2 class="auth-title">注册</h2>
       <p class="auth-sub">加入校园二手集市</p>
       <el-form ref="formRef" :model="form" :rules="rules" size="large">
-        <el-form-item prop="username">
-          <el-input v-model="form.username" placeholder="用户名" />
+        <el-form-item prop="phone">
+          <el-input v-model="form.phone" placeholder="手机号">
+            <template #prefix><el-icon><Iphone /></el-icon></template>
+          </el-input>
         </el-form-item>
         <el-form-item prop="password">
           <el-input v-model="form.password" type="password" show-password placeholder="密码" />
@@ -78,11 +74,8 @@ async function submit() {
         <el-form-item prop="confirmPassword">
           <el-input v-model="form.confirmPassword" type="password" show-password placeholder="确认密码" />
         </el-form-item>
-        <el-form-item prop="nickname">
-          <el-input v-model="form.nickname" placeholder="昵称" />
-        </el-form-item>
-        <el-form-item prop="phone">
-          <el-input v-model="form.phone" placeholder="手机号" />
+        <el-form-item prop="userName">
+          <el-input v-model="form.userName" placeholder="昵称" />
         </el-form-item>
         <el-button type="primary" class="submit-btn" :loading="loading" @click="submit">
           注册

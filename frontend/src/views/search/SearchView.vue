@@ -17,40 +17,40 @@ const goods = ref<Goods[]>([])
 const loading = ref(false)
 
 const categoryOptions = categoryGroups.map((g) => ({
-  value: g.id,
-  label: g.name,
-  children: g.children.map((c) => ({ value: c.id, label: c.name })),
+  value: g.categoryId,
+  label: g.cateName,
+  children: g.children.map((c) => ({ value: c.categoryId, label: c.cateName })),
 }))
 
 // 从 query 初始化分类：支持 group=父类id 或 category=子类id
 const groupParam = Number(route.query.group) || 0
 const categoryParam = Number(route.query.category) || 0
 if (groupParam) {
-  const g = categoryGroups.find((x) => x.id === groupParam)
-  if (g) categoryPath.value = [g.id]
+  const g = categoryGroups.find((x) => x.categoryId === groupParam)
+  if (g) categoryPath.value = [g.categoryId]
 }
 if (categoryParam) {
-  const g = categoryGroups.find((x) => x.children.some((c) => c.id === categoryParam))
-  if (g) categoryPath.value = [g.id, categoryParam]
+  const g = categoryGroups.find((x) => x.children.some((c) => c.categoryId === categoryParam))
+  if (g) categoryPath.value = [g.categoryId, categoryParam]
 }
 
 async function load() {
   loading.value = true
-  const last = categoryPath.value[categoryPath.value.length - 1]
-  // 选了父类（路径长度1）→ 按父类下所有子类筛选；选了子类（长度2）→ 按子类筛选
-  const categoryIds =
-    categoryPath.value.length === 1 && categoryPath.value[0] != null
-      ? getSubIds(categoryPath.value[0])
-      : last != null
-        ? [last]
-        : undefined
-  goods.value = await listGoods({
+  let list = await listGoods({
     keyword: keyword.value || undefined,
-    categoryIds,
     minPrice: minPrice.value,
     maxPrice: maxPrice.value,
-    status: 'on',
+    status: 1, // 上架
   })
+  // 分类筛选（客户端）：父类 → 其下所有子类；子类 → 单个子类
+  const last = categoryPath.value[categoryPath.value.length - 1]
+  if (categoryPath.value.length === 1 && categoryPath.value[0] != null) {
+    const ids = getSubIds(categoryPath.value[0])
+    list = list.filter((g) => ids.includes(g.cateId))
+  } else if (last != null) {
+    list = list.filter((g) => g.cateId === last)
+  }
+  goods.value = list
   loading.value = false
 }
 

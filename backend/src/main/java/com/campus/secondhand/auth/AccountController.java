@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -40,7 +41,7 @@ public class AccountController {
         var user = accounts.authenticate(input.phone(), input.password());
         var authentication = UsernamePasswordAuthenticationToken.authenticated(
                 new AccountService.Principal(user.userId(), AccountService.credentialVersion(user)), null,
-                List.of(new SimpleGrantedAuthority(user.userRole() == 1 ? "ROLE_ADMIN" : "ROLE_STUDENT")));
+                List.of(new SimpleGrantedAuthority(user.role() == 1 ? "ROLE_ADMIN" : "ROLE_STUDENT")));
         new ChangeSessionIdAuthenticationStrategy().onAuthentication(authentication, request, response);
         new CsrfAuthenticationStrategy(new HttpSessionCsrfTokenRepository())
                 .onAuthentication(authentication, request, response);
@@ -59,9 +60,10 @@ public class AccountController {
         return ApiResponse.success(accounts.current(principal.userId()));
     }
 
-    public record RegisterRequest(@NotBlank @Size(max = 11) String phone,
+    /** sys_user.phone 为 char(11) 且唯一，登录与注册统一按 11 位数字校验。 */
+    public record RegisterRequest(@NotBlank @Pattern(regexp = "\\d{11}", message = "手机号必须是 11 位数字") String phone,
             @NotBlank @Size(max = 72) String password, @NotBlank @Size(max = 20) String userName) { }
-    public record LoginRequest(@NotBlank @Size(max = 11) String phone,
+    public record LoginRequest(@NotBlank @Pattern(regexp = "\\d{11}", message = "手机号必须是 11 位数字") String phone,
             @NotBlank @Size(max = 72) String password) { }
 
     @PatchMapping("/api/users/me")
@@ -75,14 +77,7 @@ public class AccountController {
         accounts.changePassword(com.campus.secondhand.common.CurrentUser.id(auth), body.oldPassword(), body.newPassword());
         return ApiResponse.success(null);
     }
-    public record PasswordRequest(@NotBlank @Size(max = 72) String oldPassword,
-            @NotBlank @Size(max = 72) String newPassword) { }
-    @PutMapping("/api/admin/users/{id}/password")
-    public ApiResponse<Void> resetPassword(@PathVariable String id, @Valid @RequestBody ResetPasswordRequest body) {
-        accounts.resetPassword(id, body.newPassword());
-        return ApiResponse.success(null);
-    }
-    public record ResetPasswordRequest(@NotBlank @Size(max = 72) String newPassword) { }
+    public record PasswordRequest(@NotBlank @Size(max=72) String oldPassword,@NotBlank @Size(max=72) String newPassword) { }
 
     public record ProfileRequest(@Size(max = 20) String userName,
             @Size(max = 255) String avatar, @Size(max = 200) String intro, @Size(max = 255) String address) { }

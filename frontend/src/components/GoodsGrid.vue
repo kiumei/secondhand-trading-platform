@@ -7,7 +7,7 @@ defineProps<{ goods: Goods[] }>()
 
 <template>
   <div class="goods-grid">
-    <GoodsCard v-for="g in goods" :key="g.id" :goods="g" />
+    <GoodsCard v-for="g in goods" :key="g.goodsId" :goods="g" />
   </div>
 </template>
 

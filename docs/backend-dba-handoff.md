@@ -20,13 +20,13 @@
 
 | 约定项 | 建议做法 |
 | --- | --- |
-| 主键 | 采用当前数据库 INT AUTO_INCREMENT，由 MyBatis 回填；orders.order_id 仍为 VARCHAR(32)，后端生成订单号 |
+| 主键 | 沿用 Word 的 VARCHAR(32)，后端生成无连字符 UUID；引用字段使用相同类型和字符规则 |
 | 金额 | 沿用 DECIMAL(10,2)，Java 使用 BigDecimal |
 | 时间 | 沿用 DATETIME；建议开发库和后端统一按 Asia/Shanghai 解释，API 输出明确时区 |
 | 角色 | 沿用 0 学生、1 管理员；注册接口不能创建管理员 |
-| 商品状态 | 采用当前 SQL：0 待审核、1 上架、2 下架、3 已售出、4 驳回 |
+| 商品状态 | 沿用 Word：0 未售出、1 已售出、2 下架、3 待审核、4 驳回 |
 | 登录标识 | 建议手机号登录并建立唯一约束，昵称允许重复 |
-| 评价关联 | 采用当前 evaluate.order_id，通过订单联查商品和买家 |
+| 评价关联 | 保留 Word 中 order_id、goods_id、evaluate_user_id，由后端根据订单填充并检查一致性 |
 | 订单状态 | 沿用 PDM：0待付款、1待发货、2待收货、3完成、4取消、5售后；第一版不开放售后操作 |
 
 订单支付和完成同步当前表的 pay_status、pay_time、finish_time。图片上传和 goods_image 关联保存已实现，最多4张，按 sort_order、img_id 排序。后端没有创建表。

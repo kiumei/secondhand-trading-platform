@@ -1,37 +1,41 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, shallowRef } from 'vue'
+import { ref, reactive, onBeforeUnmount, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
 import { createGoods } from '@/api/goods'
 import { useUserStore } from '@/stores/user'
-import { locationTree } from '@/constants/locations'
 import { categoryGroups } from '@/constants/categories'
-import type { GoodsType, GoodsCondition } from '@/types'
+import type { QualityLevel, TradeType } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 const submitting = ref(false)
 
-const conditions: GoodsCondition[] = ['全新', '9成新', '8成新', '7成新', '6成新及以下']
+const qualityLevels: { value: QualityLevel; label: string }[] = [
+  { value: 1, label: '全新' },
+  { value: 2, label: '9成新' },
+  { value: 3, label: '8成新' },
+  { value: 4, label: '7成新' },
+  { value: 5, label: '6成新及以下' },
+]
 
 // 级联选择：父类 + 子类
 const categoryOptions = categoryGroups.map((g) => ({
-  value: g.id,
-  label: g.name,
-  children: g.children.map((c) => ({ value: c.id, label: c.name })),
+  value: g.categoryId,
+  label: g.cateName,
+  children: g.children.map((c) => ({ value: c.categoryId, label: c.cateName })),
 }))
 
 const form = reactive({
   title: '',
   categoryPath: [] as number[],
-  condition: '全新' as GoodsCondition,
-  price: 0,
+  qualityLevel: 1 as QualityLevel,
+  sellPrice: 0,
   originalPrice: undefined as number | undefined,
-  type: 'sell' as GoodsType,
-  location: [] as string[],
+  tradeType: 2 as TradeType,
 })
 
 // 商品主图（单张，圆形预览）
@@ -44,6 +48,7 @@ const editorRef = shallowRef()
 const editorHtml = ref('')
 const editorConfig = {
   placeholder: '描述商品成色、入手渠道、转手原因等…',
+  height: 300,
 }
 const editorMode = 'default'
 
@@ -55,11 +60,34 @@ onBeforeUnmount(() => {
   editorRef.value?.destroy()
 })
 
-// ---- 图片上传：读取为 base64 预览 ----
+// ---- 图片上传：读取为 base64 预览，并压缩（最长边 800px，JPEG 0.75）避免撑爆 localStorage 配额 ----
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.onload = () => resolve(reader.result as string)
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const maxSize = 800
+        let { width, height } = img
+        if (width > maxSize || height > maxSize) {
+          const ratio = Math.min(maxSize / width, maxSize / height)
+          width = Math.round(width * ratio)
+          height = Math.round(height * ratio)
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(reader.result as string)
+          return
+        }
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', 0.75))
+      }
+      img.onerror = () => resolve(reader.result as string)
+      img.src = reader.result as string
+    }
     reader.onerror = reject
     reader.readAsDataURL(file)
   })
@@ -97,8 +125,7 @@ function validate(): string | null {
   if (!mainImage.value) return '请上传商品主图'
   if (!form.title.trim()) return '请输入商品名称'
   if (!form.categoryPath.length) return '请选择商品分类'
-  if (!form.price || form.price <= 0) return '请输入价格'
-  if (!form.location.length) return '请选择商品所在地'
+  if (!form.sellPrice || form.sellPrice <= 0) return '请输入价格'
   return null
 }
 
@@ -111,18 +138,17 @@ async function submit() {
   if (!userStore.currentUser) return
   submitting.value = true
   const images = [mainImage.value, ...extraImages.value]
-  const categoryId = form.categoryPath[form.categoryPath.length - 1] ?? 0
+  const cateId = form.categoryPath[form.categoryPath.length - 1] ?? 0
   await createGoods({
     title: form.title.trim(),
-    desc: editorHtml.value,
-    price: form.price,
+    goodsDesc: editorHtml.value,
+    sellPrice: form.sellPrice,
     originalPrice: form.originalPrice,
-    categoryId,
-    type: form.type,
-    condition: form.condition,
-    location: form.location.join('·'),
+    cateId,
+    tradeType: form.tradeType,
+    qualityLevel: form.qualityLevel,
     images,
-    sellerId: userStore.currentUser.id,
+    publishUserId: userStore.currentUser.userId,
   })
   submitting.value = false
   ElMessage.success('发布成功，商品进入待审核，可在「我的 → 我发布的商品」查看审核进度')
@@ -207,14 +233,14 @@ async function submit() {
           <div class="field-label"><span class="required">*</span>商品成色</div>
           <div class="condition-group">
             <button
-              v-for="c in conditions"
-              :key="c"
+              v-for="q in qualityLevels"
+              :key="q.value"
               type="button"
               class="condition-pill"
-              :class="{ active: form.condition === c }"
-              @click="form.condition = c"
+              :class="{ active: form.qualityLevel === q.value }"
+              @click="form.qualityLevel = q.value"
             >
-              {{ c }}
+              {{ q.label }}
             </button>
           </div>
         </div>
@@ -223,7 +249,7 @@ async function submit() {
         <div class="field">
           <div class="field-label"><span class="required">*</span>价格</div>
           <div class="price-row">
-            <el-input-number v-model="form.price" :min="0" :precision="2" :step="10" :controls="false" style="width: 200px" />
+            <el-input-number v-model="form.sellPrice" :min="0" :precision="2" :step="10" :controls="false" style="width: 200px" />
             <span class="price-unit">元</span>
           </div>
         </div>
@@ -251,27 +277,15 @@ async function submit() {
             />
           </div>
         </div>
-
-        <!-- 商品所在地 -->
-        <div class="field">
-          <div class="field-label"><span class="required">*</span>商品所在地</div>
-          <el-cascader
-            v-model="form.location"
-            :options="locationTree"
-            :props="{ expandTrigger: 'hover' }"
-            placeholder="请选择商品所在地"
-            clearable
-            style="width: 100%"
-          />
-        </div>
       </div>
 
-      <!-- 发布类型 -->
+      <!-- 交易方式 -->
       <div class="form-section">
-        <h3 class="section-title">发布类型</h3>
-        <el-radio-group v-model="form.type">
-          <el-radio-button value="sell">我要卖</el-radio-button>
-          <el-radio-button value="want">我要买（求购）</el-radio-button>
+        <h3 class="section-title">交易方式</h3>
+        <el-radio-group v-model="form.tradeType">
+          <el-radio-button :value="1">邮寄</el-radio-button>
+          <el-radio-button :value="2">自提</el-radio-button>
+          <el-radio-button :value="3">两者均可</el-radio-button>
         </el-radio-group>
       </div>
 
@@ -451,7 +465,7 @@ async function submit() {
   border-bottom: 1px solid var(--color-hairline);
 }
 .editor-body {
-  min-height: 240px;
+  height: 300px;
   overflow-y: hidden;
 }
 

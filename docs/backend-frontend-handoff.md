@@ -56,7 +56,7 @@
 
 用户 role 表示身份（0学生、1管理员），status 表示账号状态（0正常、1封禁），两者不可混用。
 
-举报 reportType 当前按字符串传 "1"～"5"：1假冒伪劣、2欺诈行为、3辱骂骚扰、4违规违禁品、5其他；handleStatus 返回数字0待处理、1已处理。提交成功返回举报记录及 reportId、goodsId；处理举报不自动下架商品。
+举报 reportType 当前按数字传 1～5：1假冒伪劣、2欺诈行为、3辱骂骚扰、4违规违禁品、5其他；handleStatus 返回数字0待处理、1已处理。提交成功返回举报记录及 reportId、goodsId；处理举报不自动下架商品。
 
 注册、下单、发布等操作无需传当前用户角色或当前登录用户 ID。订单售价和卖家身份由后端读取商品确定。
 
@@ -75,7 +75,7 @@
 | 发布/修改 | `POST /goods`、`PUT /goods/{id}` | 发布者修改后重新进入待审核，见下方请求示例 |
 | 我的商品 | `GET /users/me/goods` | 分页，可按 status 筛选 |
 | 下架 | `POST /goods/{id}/off-shelf` | 由后端校验所有权和交易占用 |
-| 待审核列表 | `GET /admin/goods?status=0` | 管理员分页查询 |
+| 待审核列表 | `GET /admin/goods?status=3` | 管理员分页查询 |
 | 审核 | `POST /admin/goods/{id}/review` | decision 建议 PASS/REJECT；驳回附 rejectReason |
 | 审核前修改商品 | `PUT /admin/goods/{id}` | 管理员仅可修改待审核商品，修改后再执行审核 |
 | 分类维护 | `POST /admin/categories`、`PUT /admin/categories/{id}`、`DELETE /admin/categories/{id}` | 分类有商品时删除可能被拒绝 |
@@ -107,11 +107,11 @@
 
 商品响应建议包含 goodsId、上述商品信息、publishTime、goodsStatus、purchasable；详情附卖家公开昵称和头像，个人手机号不默认公开。发布时 categoryId、title、sellPrice、tradeType、goodsDesc 必填，originalPrice 和 qualityLevel 可选。金额最多两位小数；tradeType 沿用 1邮寄、2自提、3两者，当前不提供物流追踪。
 
-已提供 POST /api/uploads/images（multipart 字段 file，JPEG/PNG、5 MB），返回 data.url/width/height；GET /api/media/{filename} 公开访问。此地址适用于公开商品图和头像，不用于私密凭证。商品发布和编辑支持 images 地址数组，最多4张；响应返回 images 和 coverImg。编辑时省略或 null 保留图片，空数组清空图片，第一张为封面。
+已提供 POST /api/uploads/images（multipart 字段 file，JPEG/PNG、5 MB），返回 data.url/width/height；GET /api/media/{filename} 公开访问。此地址适用于公开商品图和头像，不用于私密凭证。商品发布和编辑支持 images 地址数组，最多4张；响应返回 images 和 coverUrl。编辑时省略或 null 保留图片，空数组清空图片，第一张为封面。
 
 ## 状态展示建议
 
-商品状态按 2026-09-08 DBA SQL：0 待审核、1 上架、2 下架、3 已售出、4 驳回。建议前端统一维护字典，详情是否显示购买按钮还应结合 purchasable，不能只判断商品状态。
+商品状态按现有 Word 文档：0 未售出、1 已售出、2 下架、3 待审核、4 驳回。建议前端统一维护字典，详情是否显示购买按钮还应结合 purchasable，不能只判断商品状态。
 
 订单沿用系统设计 PDM 的状态：0待付款、1待发货、2待收货、3完成、4取消、5售后。第一版流程为“待付款→待发货→待收货→完成”，未付款可取消，售后暂不开放操作。建议统一维护状态字典。当前订单返回 orderStatus，尚未返回 statusText 或 allowedActions；前端可按上述字典显示，后端会检查每次操作的权限和旧状态。
 

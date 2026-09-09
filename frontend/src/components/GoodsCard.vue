@@ -5,45 +5,33 @@ import type { Goods } from '@/types'
 const props = defineProps<{ goods: Goods }>()
 
 const statusText = computed(() => {
-  const map: Record<string, string> = {
-    on: '',
-    sold: '已售出',
-    off: '已下架',
-    pending: '待审核',
-    rejected: '已驳回',
+  const map: Record<number, string> = {
+    0: '待审核',
+    1: '',
+    2: '已下架',
+    3: '已售出',
+    4: '已驳回',
   }
-  return map[props.goods.status] ?? ''
+  return map[props.goods.goodsStatus] ?? ''
 })
 
 const img = computed(() => props.goods.images[0] ?? '')
-
-// 地区短名：取 location 最后一段（如「前湖校区北区·修贤2栋」→「修贤2栋」）
-const shortLocation = computed(() => {
-  const loc = props.goods.location
-  if (!loc) return ''
-  const parts = loc.split('·')
-  return parts[parts.length - 1] ?? ''
-})
 </script>
 
 <template>
-  <div class="goods-card hover-card" @click="$router.push({ name: 'goods-detail', params: { id: goods.id } })">
+  <div class="goods-card hover-card" @click="$router.push({ name: 'goods-detail', params: { id: goods.goodsId } })">
     <div class="img-wrap">
       <img :src="img" :alt="goods.title" class="img" />
       <span v-if="statusText" class="status-tag">{{ statusText }}</span>
-      <span v-if="goods.type === 'want'" class="want-tag">求购</span>
-      <span v-else-if="goods.freeShipping" class="free-tag">包邮</span>
     </div>
     <div class="info">
       <div class="title ellipsis-2">{{ goods.title }}</div>
       <div class="bottom">
-        <span class="price">{{ goods.price }}</span>
-        <span class="want">{{ goods.wantCount ?? 0 }} 人想要</span>
+        <span class="price">¥{{ goods.sellPrice }}</span>
       </div>
       <div class="meta">
         <span class="seller ellipsis">{{ goods.sellerName ?? '匿名' }}</span>
-        <span class="date">{{ goods.createdAt.slice(0, 10) }}</span>
-        <span class="loc ellipsis">{{ shortLocation }}</span>
+        <span class="date">{{ goods.publishTime.slice(0, 10) }}</span>
       </div>
     </div>
   </div>
@@ -83,28 +71,6 @@ const shortLocation = computed(() => {
   padding: 2px var(--space-2);
   border-radius: var(--radius-xs);
 }
-.want-tag {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-  background: var(--color-brand);
-  color: #fff;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-xs);
-}
-.free-tag {
-  position: absolute;
-  top: var(--space-2);
-  right: var(--space-2);
-  background: #ffd700;
-  color: #333;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-xs);
-}
 .info {
   padding: var(--space-3);
 }
@@ -123,10 +89,7 @@ const shortLocation = computed(() => {
 .price {
   font-size: var(--text-lg);
   font-weight: 700;
-}
-.want {
-  font-size: var(--text-xs);
-  color: var(--text-sub);
+  color: var(--color-primary);
 }
 .meta {
   display: flex;
@@ -142,9 +105,5 @@ const shortLocation = computed(() => {
 }
 .date {
   flex-shrink: 0;
-}
-.loc {
-  flex-shrink: 0;
-  max-width: 80px;
 }
 </style>

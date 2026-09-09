@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useFavoriteStore } from '@/stores/favorite'
 import { listMessages } from '@/api/message'
 import { listOrders } from '@/api/order'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const favoriteStore = useFavoriteStore()
 
@@ -19,15 +20,15 @@ async function loadBadges() {
     orderCount.value = 0
     return
   }
-  const uid = userStore.currentUser!.id
+  const uid = userStore.currentUser!.userId
   const [msgs, buys, sells] = await Promise.all([
     listMessages(uid),
     listOrders({ buyerId: uid }),
     listOrders({ sellerId: uid }),
   ])
-  msgCount.value = msgs.length
+  msgCount.value = msgs.filter((m) => m.receiveUserId === uid && m.isRead === 0).length
   orderCount.value = [...buys, ...sells].filter(
-    (o) => !['done', 'cancelled'].includes(o.status),
+    (o) => o.orderStatus !== 3 && o.orderStatus !== 4,
   ).length
   favoriteStore.refresh()
 }
@@ -35,6 +36,9 @@ async function loadBadges() {
 watch(() => userStore.isLoggedIn, (v) => {
   if (v) loadBadges()
 }, { immediate: true })
+
+// 路由变化时刷新角标（读完消息 / 处理完订单返回后，红点随之更新）
+watch(() => route.fullPath, () => loadBadges())
 
 function go(name: string) {
   if (!userStore.isLoggedIn) {
@@ -52,13 +56,8 @@ function goPublish() {
   router.push({ name: 'publish' })
 }
 
-function goService() {
-  router.push({ name: 'search', query: { group: '5' } })
-}
-
 const items = [
   { key: 'publish', icon: 'Plus', label: '发布', accent: true, fn: goPublish },
-  { key: 'service', icon: 'Service', label: '校园服务', fn: goService },
   { key: 'messages', icon: 'ChatDotRound', label: '消息', badge: () => msgCount.value },
   { key: 'orders', icon: 'Tickets', label: '订单', badge: () => orderCount.value },
   { key: 'favorites', icon: 'Star', label: '收藏', badge: () => favoriteStore.favorites.length },

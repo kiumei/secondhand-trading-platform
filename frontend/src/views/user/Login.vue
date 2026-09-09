@@ -10,10 +10,10 @@ const userStore = useUserStore()
 
 const formRef = ref()
 const loading = ref(false)
-const form = reactive({ username: '', password: '' })
+const form = reactive({ phone: '', password: '' })
 
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 }
 
@@ -21,14 +21,14 @@ async function submit() {
   if (!formRef.value) return
   await formRef.value.validate()
   loading.value = true
-  const ok = await userStore.login(form.username, form.password)
+  const ok = await userStore.login(form.phone, form.password)
   loading.value = false
   if (ok) {
     ElMessage.success('登录成功')
     const redirect = (route.query.redirect as string) || '/'
     router.push(redirect)
   } else {
-    ElMessage.error('用户名或密码错误')
+    ElMessage.error('手机号或密码错误')
   }
 }
 </script>
@@ -40,9 +40,9 @@ async function submit() {
       <h2 class="auth-title">登录</h2>
       <p class="auth-sub">欢迎回到校园二手集市</p>
       <el-form ref="formRef" :model="form" :rules="rules" size="large">
-        <el-form-item prop="username">
-          <el-input v-model="form.username" placeholder="用户名">
-            <template #prefix><el-icon><User /></el-icon></template>
+        <el-form-item prop="phone">
+          <el-input v-model="form.phone" placeholder="手机号">
+            <template #prefix><el-icon><Iphone /></el-icon></template>
           </el-input>
         </el-form-item>
         <el-form-item prop="password">
@@ -59,7 +59,7 @@ async function submit() {
         <el-link type="primary" @click="router.push({ name: 'register' })">立即注册</el-link>
       </div>
       <div class="demo-hint">
-        测试账号：admin / 123456（管理员），xingyao / 123456（学生）
+        测试账号：13800000000 / 123456（管理员），13811112222 / 123456（学生）
       </div>
     </div>
   </div>

@@ -2,12 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { listGoods } from '@/api/goods'
 import { useFavoriteStore } from '@/stores/favorite'
-import { useUserStore } from '@/stores/user'
 import type { Goods } from '@/types'
 import GoodsGrid from '@/components/GoodsGrid.vue'
 
 const favoriteStore = useFavoriteStore()
-const userStore = useUserStore()
 const goods = ref<Goods[]>([])
 const loading = ref(false)
 
@@ -16,7 +14,7 @@ async function load() {
   loading.value = true
   const ids = favoriteStore.favorites.map((f) => f.goodsId)
   const all = await listGoods()
-  goods.value = all.filter((g) => ids.includes(g.id))
+  goods.value = all.filter((g) => ids.includes(g.goodsId))
   loading.value = false
 }
 

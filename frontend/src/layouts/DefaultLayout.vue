@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { useFavoriteStore } from '@/stores/favorite'
 import { listGoods } from '@/api/goods'
-import { listCategories, listBulletins } from '@/api/admin'
-import { hotKeywords } from '@/constants/locations'
+import { listCategories } from '@/api/admin'
 import { ElMessage } from 'element-plus'
-import type { Bulletin } from '@/types'
 import DockBar from '@/components/DockBar.vue'
 
 const router = useRouter()
@@ -19,35 +17,11 @@ const favoriteStore = useFavoriteStore()
 const keyword = ref('')
 const suggestWords = ref<string[]>([])
 
-// 公告条
-const bulletins = ref<Bulletin[]>([])
-const showBulletin = ref(false)
-const bulletinIndex = ref(0)
-let bulletinTimer: ReturnType<typeof setInterval> | null = null
-
-const currentBulletin = computed(() => bulletins.value[bulletinIndex.value])
-
-function startBulletinTimer() {
-  stopBulletinTimer()
-  if (bulletins.value.length > 1) {
-    bulletinTimer = setInterval(() => {
-      bulletinIndex.value = (bulletinIndex.value + 1) % bulletins.value.length
-    }, 3000)
-  }
-}
-function stopBulletinTimer() {
-  if (bulletinTimer) {
-    clearInterval(bulletinTimer)
-    bulletinTimer = null
-  }
-}
-
-// 加载联想词源：商品标题 + 分类 + 热词（地址不混入搜索联想）
+// 加载联想词源：商品标题 + 分类名
 async function loadSuggestWords() {
   const [goods, categories] = await Promise.all([listGoods(), listCategories()])
   const set = new Set<string>()
-  hotKeywords.forEach((w) => set.add(w))
-  categories.forEach((c) => set.add(c.name))
+  categories.forEach((c) => set.add(c.cateName))
   goods.forEach((g) => set.add(g.title))
   suggestWords.value = Array.from(set)
 }
@@ -77,14 +51,7 @@ function toggleTheme() {
   themeStore.setTheme(themeStore.theme === 'light' ? 'dark' : 'light')
 }
 
-onMounted(async () => {
-  loadSuggestWords()
-  bulletins.value = await listBulletins()
-  showBulletin.value = bulletins.value.length > 0
-  startBulletinTimer()
-})
-
-onBeforeUnmount(stopBulletinTimer)
+onMounted(loadSuggestWords)
 
 watch(() => userStore.isLoggedIn, () => {
   if (userStore.isLoggedIn) {
@@ -131,6 +98,7 @@ watch(() => userStore.isLoggedIn, () => {
             <el-dropdown>
               <span class="avatar-wrap">
                 <el-avatar :size="36" :src="userStore.currentUser?.avatar" />
+                <span class="nav-username">{{ userStore.currentUser?.userName }}</span>
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -158,21 +126,6 @@ watch(() => userStore.isLoggedIn, () => {
         </div>
       </div>
     </header>
-
-    <!-- 公告条 -->
-    <div v-if="showBulletin && currentBulletin" class="bulletin-bar">
-      <div class="bulletin-content">
-        <el-icon class="bulletin-bell"><Bell /></el-icon>
-        <div class="bulletin-carousel">
-          <Transition name="bulletin-slide" mode="out-in">
-            <span :key="currentBulletin.id" class="bulletin-text ellipsis">
-              {{ currentBulletin.title }}：{{ currentBulletin.content }}
-            </span>
-          </Transition>
-        </div>
-      </div>
-      <el-icon class="bulletin-close" @click="showBulletin = false"><Close /></el-icon>
-    </div>
 
     <main class="main">
       <RouterView />
@@ -271,6 +224,11 @@ watch(() => userStore.isLoggedIn, () => {
   cursor: pointer;
   outline: none;
 }
+.nav-username {
+  margin-left: var(--space-2);
+  font-size: var(--text-base);
+  color: var(--text-main);
+}
 .login-btn {
   background: var(--color-primary);
   color: #fff;
@@ -280,63 +238,6 @@ watch(() => userStore.isLoggedIn, () => {
 .login-btn:hover {
   background: var(--color-primary-active);
   color: #fff;
-}
-.bulletin-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 1200px;
-  margin: var(--space-2) auto 0;
-  background: var(--color-surface);
-  color: var(--text-sub);
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--text-sm);
-  border-radius: var(--radius-sm);
-}
-.bulletin-content {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-}
-.bulletin-bell {
-  flex-shrink: 0;
-  color: var(--color-primary);
-}
-.bulletin-carousel {
-  flex: 1;
-  min-width: 0;
-  height: 24px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-}
-.bulletin-text {
-  display: block;
-  width: 100%;
-}
-.bulletin-close {
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.bulletin-close:hover {
-  color: var(--text-main);
-}
-
-/* 公告轮播过渡 */
-.bulletin-slide-enter-active,
-.bulletin-slide-leave-active {
-  transition: all 0.4s ease;
-}
-.bulletin-slide-enter-from {
-  opacity: 0;
-  transform: translateY(100%);
-}
-.bulletin-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-100%);
 }
 .main {
   flex: 1;

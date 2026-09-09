@@ -4,7 +4,7 @@ import type { Favorite } from '@/types'
 export function listFavorites(userId: number): Promise<Favorite[]> {
   const list = getDB().favorites
     .filter((f) => f.userId === userId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .sort((a, b) => b.createTime.localeCompare(a.createTime))
   return delay(list)
 }
 
@@ -15,7 +15,12 @@ export function isFavorite(userId: number, goodsId: number): Promise<boolean> {
 export function addFavorite(userId: number, goodsId: number): Promise<void> {
   const db = getDB()
   if (!db.favorites.some((f) => f.userId === userId && f.goodsId === goodsId)) {
-    db.favorites.push({ id: nextId('favorite'), userId, goodsId, createdAt: new Date().toLocaleString('zh-CN') })
+    db.favorites.push({
+      favoriteId: nextId('favorite'),
+      userId,
+      goodsId,
+      createTime: new Date().toLocaleString('zh-CN'),
+    })
     persist()
   }
   return delay(undefined)

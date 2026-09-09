@@ -38,6 +38,10 @@ class MySqlModuleWiringTest {
         assertThat(AopUtils.isAopProxy(context.getBean(com.campus.secondhand.market.GoodsService.class))).isTrue();
         assertThat(AopUtils.isAopProxy(context.getBean(com.campus.secondhand.market.OrderService.class))).isTrue();
         assertThat(AopUtils.isAopProxy(context.getBean(com.campus.secondhand.market.CommunicationService.class))).isTrue();
+        assertThat(AopUtils.isAopProxy(context.getBean(com.campus.secondhand.market.FavoriteService.class))).isTrue();
+        assertThat(AopUtils.isAopProxy(context.getBean(com.campus.secondhand.user.AdminUserService.class))).isTrue();
+        assertThat(context.getBeansOfType(com.campus.secondhand.system.DashboardService.class)).hasSize(1);
+        assertThat(context.getBeansOfType(com.campus.secondhand.system.DashboardController.class)).hasSize(1);
         assertThat(sessions.getConfiguration().hasStatement("com.campus.secondhand.user.UserMapper.insert")).isTrue();
         assertThat(sessions.getConfiguration().hasStatement("com.campus.secondhand.category.CategoryMapper.findAll")).isTrue();
         verify(dataSource, never()).getConnection();
