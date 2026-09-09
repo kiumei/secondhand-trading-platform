@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { type InternalAxiosRequestConfig } from 'axios'
 
 // CSRF token 状态：登录前获取，登录后需重新获取
 let csrfToken = ''
@@ -25,8 +25,20 @@ http.interceptors.response.use(
     const body = response.data as { code: string; data: unknown }
     return (body && body.code === 'OK' ? body.data : body) as never
   },
-  (error) => {
+  async (error) => {
     const status = error.response?.status as number | undefined
+    // 刷新页面恢复会话后，本地 CSRF token 为空或已过期 → 403。
+    // 重新取 token 后原样重试一次（仅写请求会走到这）。
+    const cfg = error.config as (InternalAxiosRequestConfig & { _csrfRetried?: boolean }) | undefined
+    if (status === 403 && cfg && !cfg._csrfRetried && !String(cfg.url ?? '').includes('/auth/')) {
+      cfg._csrfRetried = true
+      try {
+        await refreshCsrf()
+        return http(cfg)
+      } catch {
+        // 重新取 token 失败则继续走下面的统一错误
+      }
+    }
     const body = error.response?.data as { code?: string; message?: string } | undefined
     return Promise.reject({
       status,
@@ -42,6 +54,26 @@ export async function refreshCsrf() {
   csrfToken = data.token
   if (data.headerName) csrfHeaderName = data.headerName
   return data
+}
+
+// 后端分页 pageSize 上限 50；需要全量数据时按页翻取聚合
+export async function getAllPages<T>(
+  url: string,
+  params: Record<string, string | number> = {},
+): Promise<T[]> {
+  const pageSize = 50
+  let page = 1
+  const result: T[] = []
+  for (;;) {
+    const res = (await http.get(url, {
+      params: { ...params, page, pageSize },
+    })) as { items?: T[] } | null
+    const items = res?.items ?? []
+    result.push(...items)
+    if (items.length < pageSize) break
+    page += 1
+  }
+  return result
 }
 
 export default http

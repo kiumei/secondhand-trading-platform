@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listGoods, updateGoodsStatus, updateGoods } from '@/api/goods'
+import { listAdminGoods, updateGoodsStatus, updateGoods } from '@/api/goods'
 import { listCategories } from '@/api/admin'
 import { getUser } from '@/api/user'
 import type { Goods, TradeType, QualityLevel, Category } from '@/types'
@@ -50,7 +50,7 @@ const editForm = reactive({
 
 async function load() {
   loading.value = true
-  goods.value = await listGoods()
+  goods.value = await listAdminGoods(0)
   for (const g of goods.value) {
     const u = await getUser(g.publishUserId)
     if (u) sellers.value[g.publishUserId] = u.userName

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { listMessages, sendMessage, markConversationRead } from '@/api/message'
 import { uploadImage } from '@/api/media'
-import { listUsers } from '@/api/user'
+import { getUser } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import type { Message, User } from '@/types'
 
@@ -43,21 +44,38 @@ const activeMessages = computed(() => {
 
 async function load() {
   if (!userStore.currentUser) return
-  messages.value = await listMessages(userStore.currentUser.userId)
-  users.value = await listUsers()
+  const uid = userStore.currentUser.userId
+  messages.value = await listMessages(uid)
   const to = (route.query.to as string) || ''
-  if (to && users.value.some((u) => u.userId === to)) {
+  // 从消息里提取会话对象 ID，加上跳转目标，逐个拉公开资料
+  const ids = new Set<string>()
+  for (const m of messages.value) {
+    if (m.sendUserId !== uid) ids.add(m.sendUserId)
+    if (m.receiveUserId !== uid) ids.add(m.receiveUserId)
+  }
+  if (to) ids.add(to)
+  const list: User[] = []
+  for (const id of ids) {
+    const u = await getUser(id)
+    if (u) list.push(u)
+  }
+  users.value = list
+  if (to) {
     activeUserId.value = to
-    await markConversationRead(userStore.currentUser.userId, to)
+    await markConversationRead(uid, to)
   }
 }
 
 async function send() {
   if (!userStore.currentUser || activeUserId.value == null) return
   if (!draft.value.trim()) return
-  await sendMessage(userStore.currentUser.userId, activeUserId.value, draft.value.trim())
-  draft.value = ''
-  await load()
+  try {
+    await sendMessage(userStore.currentUser.userId, activeUserId.value, draft.value.trim())
+    draft.value = ''
+    await load()
+  } catch {
+    ElMessage.error('发送失败，请稍后重试')
+  }
 }
 
 function compressImage(file: File): Promise<string> {
@@ -102,7 +120,7 @@ function onPickImage(e: Event) {
   uploadImage(file).then(async (url) => {
     await sendMessage(uid, peerId, '', url)
     await load()
-  })
+  }).catch(() => ElMessage.error('图片发送失败，请稍后重试'))
   input.value = ''
 }
 

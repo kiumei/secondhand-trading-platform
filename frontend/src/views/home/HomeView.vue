@@ -52,7 +52,8 @@ async function loadAll() {
     listGoods({ status: 1 }), // 上架
     listCategories(),
   ])
-  allGoods.value = goodsList
+  // 首页是购物入口，只展示可购买商品（过滤掉已被他人拍下/订单中的）
+  allGoods.value = goodsList.filter((g) => g.purchasable)
   categories.value = catList
   goods.value = allGoods.value
   loading.value = false

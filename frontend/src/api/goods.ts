@@ -1,4 +1,4 @@
-import http from './http'
+import http, { getAllPages } from './http'
 import type { Goods, GoodsStatus, TradeType, QualityLevel } from '@/types'
 
 // 后端返回的金额是字符串，这里定义 API 原始类型
@@ -61,6 +61,7 @@ export async function listGoods(query: GoodsQuery = {}): Promise<Goods[]> {
   if (query.maxPrice != null) params.maxPrice = query.maxPrice
   if (query.status != null) params.status = query.status
   const data = (await http.get('/goods', { params })) as { items: ApiGoods[] }
+  // 后端公开列表只返回「上架」商品。是否只保留可购买商品由购物场景调用方决定。
   return (data.items ?? []).map(toGoods)
 }
 
@@ -134,8 +135,16 @@ export async function updateGoodsStatus(
 
 // 我的商品（当前用户）
 export async function listMyGoods(status?: GoodsStatus): Promise<Goods[]> {
-  const params: Record<string, string | number> = { page: 1, pageSize: 50 }
+  const params: Record<string, string | number> = {}
   if (status != null) params.status = status
-  const data = (await http.get('/users/me/goods', { params })) as { items: ApiGoods[] }
-  return (data.items ?? []).map(toGoods)
+  const items = await getAllPages<ApiGoods>('/users/me/goods', params)
+  return items.map(toGoods)
+}
+
+// 管理员商品列表（可按状态筛选，例如待审核 status=0）
+export async function listAdminGoods(status?: GoodsStatus): Promise<Goods[]> {
+  const params: Record<string, string | number> = {}
+  if (status != null) params.status = status
+  const items = await getAllPages<ApiGoods>('/admin/goods', params)
+  return items.map(toGoods)
 }

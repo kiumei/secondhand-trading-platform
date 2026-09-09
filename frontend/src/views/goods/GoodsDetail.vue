@@ -45,13 +45,17 @@ async function load() {
   }
 }
 
-function toggleFavorite() {
+async function toggleFavorite() {
   if (!userStore.isLoggedIn) {
     router.push({ name: 'login', query: { redirect: route.fullPath } })
     return
   }
-  favoriteStore.toggle(goodsId.value)
-  ElMessage.success(faved.value ? '已取消收藏' : '已收藏')
+  try {
+    await favoriteStore.toggle(goodsId.value)
+    ElMessage.success(favoriteStore.isFavorite(goodsId.value) ? '收藏成功' : '已取消收藏')
+  } catch {
+    ElMessage.error('操作失败，请稍后重试')
+  }
 }
 
 function openBuy() {

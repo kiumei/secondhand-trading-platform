@@ -35,12 +35,10 @@ const form = reactive({
   tradeType: 2 as TradeType,
 })
 
-// 商品主图（单张，圆形预览）
+// 商品主图（单张，圆形预览）；extraImages 最多 4 张。
+// 预览阶段已压缩成 dataURL，上传时直接用它转 File，避免把 2MB+ 的原图发出去触发网络错误。
 const mainImage = ref('')
-// 更多图片（最多 4 张）
 const extraImages = ref<string[]>([])
-const mainImageFile = ref<File | null>(null)
-const extraImageFiles = ref<File[]>([])
 
 // 富文本编辑器
 const editorRef = shallowRef()
@@ -96,11 +94,23 @@ function readAsDataUrl(file: File): Promise<string> {
   })
 }
 
+// 把预览用的压缩 dataURL 转成 File，上传时用它，避免原图过大触发网络错误
+function dataUrlToFile(dataUrl: string): File {
+  const comma = dataUrl.indexOf(',')
+  const isPng = dataUrl.slice(0, comma).includes('png')
+  const base64 = dataUrl.slice(comma + 1)
+  const bin = atob(base64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return new File([bytes], isPng ? 'image.png' : 'image.jpg', {
+    type: isPng ? 'image/png' : 'image/jpeg',
+  })
+}
+
 function onMainImageChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  mainImageFile.value = file
   readAsDataUrl(file).then((url) => {
     mainImage.value = url
   })
@@ -115,7 +125,6 @@ function onExtraImagesChange(e: Event) {
     ElMessage.warning(`最多上传 4 张图片，还能再传 ${remain} 张`)
   }
   const accepted = files.slice(0, remain)
-  extraImageFiles.value.push(...accepted)
   Promise.all(accepted.map(readAsDataUrl)).then((urls) => {
     extraImages.value.push(...urls)
   })
@@ -124,7 +133,6 @@ function onExtraImagesChange(e: Event) {
 
 function removeExtraImage(index: number) {
   extraImages.value.splice(index, 1)
-  extraImageFiles.value.splice(index, 1)
 }
 
 // ---- 提交 ----
@@ -133,6 +141,8 @@ function validate(): string | null {
   if (!form.title.trim()) return '请输入商品名称'
   if (!form.cateId) return '请选择商品分类'
   if (!form.sellPrice || form.sellPrice <= 0) return '请输入价格'
+  const text = (editorHtml.value || '').replace(/<[^>]*>/g, '').trim()
+  if (!text) return '请填写商品详情描述'
   return null
 }
 
@@ -145,10 +155,10 @@ async function submit() {
   if (!userStore.currentUser) return
   submitting.value = true
   try {
-    // 上传图片，拿后端返回的 URL
+    // 上传图片（用压缩后的 dataURL 转 File，避免把原图发出去触发网络错误）
     const imageUrls: string[] = []
-    if (mainImageFile.value) imageUrls.push(await uploadImage(mainImageFile.value))
-    for (const f of extraImageFiles.value) imageUrls.push(await uploadImage(f))
+    imageUrls.push(await uploadImage(dataUrlToFile(mainImage.value)))
+    for (const url of extraImages.value) imageUrls.push(await uploadImage(dataUrlToFile(url)))
     const cateId = form.cateId
     await createGoods({
       title: form.title.trim(),
@@ -163,6 +173,9 @@ async function submit() {
     })
     ElMessage.success('发布成功，商品进入待审核，可在「我的 → 我发布的商品」查看审核进度')
     router.push({ name: 'profile' })
+  } catch (err) {
+    const msg = (err as { message?: string })?.message || '发布失败，请稍后重试'
+    ElMessage.error(msg)
   } finally {
     submitting.value = false
   }

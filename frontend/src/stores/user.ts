@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { User } from '@/types'
 import * as authApi from '@/api/auth'
+import { refreshCsrf } from '@/api/http'
 
 export const useUserStore = defineStore('user', () => {
   const currentUser = ref<User | null>(null)
@@ -9,9 +10,11 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => currentUser.value != null)
   const isAdmin = computed(() => currentUser.value?.role === 1)
 
-  // 恢复会话：刷新页面后通过 Cookie Session 从后端取当前用户
+  // 恢复会话：刷新页面后通过 Cookie Session 从后端取当前用户。
+  // 刷新后本地 CSRF token 会丢失，先取一次保证后续写请求（收藏/发消息/下单）能带上 token。
   async function restoreSession() {
     try {
+      await refreshCsrf()
       currentUser.value = await authApi.getCurrentUser()
     } catch {
       currentUser.value = null

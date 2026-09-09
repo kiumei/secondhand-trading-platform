@@ -1,4 +1,4 @@
-import http from './http'
+import http, { getAllPages } from './http'
 import type { Message } from '@/types'
 
 interface ApiMessage {
@@ -28,10 +28,10 @@ function toMessage(api: ApiMessage): Message {
 }
 
 export async function listMessages(userId: string): Promise<Message[]> {
-  const data = (await http.get('/users/me/messages', { params: { page: 1, pageSize: 200 } })) as {
-    items: ApiMessage[]
-  }
-  return (data.items ?? []).map(toMessage)
+  const items = await getAllPages<ApiMessage>('/users/me/messages')
+  return items
+    .filter((m) => m.sendUserId !== m.receiveUserId) // 过滤"发给自己"的系统通知
+    .map(toMessage)
 }
 
 export async function sendMessage(

@@ -25,6 +25,8 @@ async function load() {
     maxPrice: maxPrice.value,
     status: 1, // 上架
   })
+  // 搜索结果作为购物入口，只展示可购买商品
+  list = list.filter((g) => g.purchasable)
   if (category.value) {
     list = list.filter((g) => g.cateId === category.value)
   }

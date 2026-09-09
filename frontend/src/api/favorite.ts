@@ -1,13 +1,11 @@
-import http from './http'
+import http, { getAllPages } from './http'
 import { toGoods } from './goods'
 import type { Goods } from '@/types'
 
 // 收藏列表返回的是商品列表（Goods）
 export async function listFavorites(): Promise<Goods[]> {
-  const data = (await http.get('/favorites', { params: { page: 1, pageSize: 200 } })) as {
-    items: unknown[]
-  }
-  return (data.items ?? []).map((g) => toGoods(g as never))
+  const items = await getAllPages<unknown>('/favorites')
+  return items.map((g) => toGoods(g as never))
 }
 
 export async function isFavorite(goodsId: string): Promise<boolean> {

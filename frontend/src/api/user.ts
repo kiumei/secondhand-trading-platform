@@ -1,4 +1,4 @@
-import http from './http'
+import http, { getAllPages } from './http'
 import type { User } from '@/types'
 
 interface ApiUser {
@@ -39,10 +39,8 @@ export async function getUser(id: string): Promise<User | undefined> {
 
 // 管理员用户列表
 export async function listUsers(): Promise<User[]> {
-  const data = (await http.get('/admin/users', { params: { page: 1, pageSize: 200 } })) as {
-    items: ApiUser[]
-  }
-  return (data.items ?? []).map(toUser)
+  const items = await getAllPages<ApiUser>('/admin/users')
+  return items.map(toUser)
 }
 
 // 封禁 / 解封
