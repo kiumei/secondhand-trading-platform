@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { listMessages, sendMessage, markConversationRead } from '@/api/message'
@@ -15,66 +15,114 @@ const messages = ref<Message[]>([])
 const users = ref<User[]>([])
 const activeUserId = ref<string | null>(null)
 const draft = ref('')
+const chatBody = ref<HTMLElement | null>(null)
+
+function isNearBottom(el: HTMLElement): boolean {
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 80
+}
+function scrollChatToBottom() {
+  const el = chatBody.value
+  if (el) el.scrollTop = el.scrollHeight
+}
 
 const activeUser = computed(() => users.value.find((u) => u.userId === activeUserId.value))
 
 const conversations = computed(() => {
+  const uid = userStore.currentUser?.userId
   const map = new Map<string, Message[]>()
   for (const m of messages.value) {
-    const other =
-      m.sendUserId === userStore.currentUser?.userId ? m.receiveUserId : m.sendUserId
+    const other = m.sendUserId === uid ? m.receiveUserId : m.sendUserId
     if (!map.has(other)) map.set(other, [])
     map.get(other)!.push(m)
   }
-  return Array.from(map.entries()).map(([id, msgs]) => ({
-    user: users.value.find((u) => u.userId === id),
-    msgs,
-    last: msgs[msgs.length - 1],
-  }))
+  // 后端按新→旧返回，msgs[0] 即该会话最新一条；按时间倒序让新会话置顶
+  return Array.from(map.entries())
+    .map(([id, msgs]) => ({
+      id,
+      user: users.value.find((u) => u.userId === id),
+      msgs,
+      last: msgs[0],
+      unread: msgs.filter((m) => m.receiveUserId === uid && m.isRead === 0).length,
+    }))
+    .sort(
+      (a, b) =>
+        new Date(b.last?.sendTime ?? 0).getTime() - new Date(a.last?.sendTime ?? 0).getTime() ||
+        Number(b.last?.msgId ?? 0) - Number(a.last?.msgId ?? 0),
+    )
 })
 
 const activeMessages = computed(() => {
   if (activeUserId.value == null) return []
-  return messages.value.filter(
-    (m) =>
-      (m.sendUserId === userStore.currentUser?.userId && m.receiveUserId === activeUserId.value) ||
-      (m.sendUserId === activeUserId.value && m.receiveUserId === userStore.currentUser?.userId),
-  )
+  // 时间正序展示：最老在上、最新在下；同秒时按 msgId 升序保证顺序确定，两端一致
+  return messages.value
+    .filter(
+      (m) =>
+        (m.sendUserId === userStore.currentUser?.userId && m.receiveUserId === activeUserId.value) ||
+        (m.sendUserId === activeUserId.value && m.receiveUserId === userStore.currentUser?.userId),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.sendTime).getTime() - new Date(b.sendTime).getTime() ||
+        Number(a.msgId) - Number(b.msgId),
+    )
 })
 
 async function load() {
   if (!userStore.currentUser) return
   const uid = userStore.currentUser.userId
+  const el = chatBody.value
+  // 刷新前在底部（或还没渲染）→ 刷新后继续贴底；正在往上翻历史则不打扰
+  const stick = el ? isNearBottom(el) : true
   messages.value = await listMessages(uid)
-  const to = (route.query.to as string) || ''
-  // 从消息里提取会话对象 ID，加上跳转目标，逐个拉公开资料
+  // 提取会话对象 ID（含当前正在聊的人），逐个拉公开资料
   const ids = new Set<string>()
   for (const m of messages.value) {
     if (m.sendUserId !== uid) ids.add(m.sendUserId)
     if (m.receiveUserId !== uid) ids.add(m.receiveUserId)
   }
-  if (to) ids.add(to)
+  if (activeUserId.value) ids.add(activeUserId.value)
   const list: User[] = []
   for (const id of ids) {
     const u = await getUser(id)
     if (u) list.push(u)
   }
   users.value = list
-  if (to) {
-    activeUserId.value = to
-    await markConversationRead(uid, to)
-  }
+  await nextTick()
+  if (stick) scrollChatToBottom()
 }
 
+// 打开/切换到某人的会话：设为当前人、标记已读、拉取消息与资料
+async function openConversation(id: string) {
+  if (!userStore.currentUser) return
+  activeUserId.value = id
+  await markConversationRead(userStore.currentUser.userId, id)
+  await load()
+  // 通知 DockBar 重新计算"消息"红点
+  window.dispatchEvent(new Event('messages-read'))
+}
+
+const sending = ref(false)
 async function send() {
-  if (!userStore.currentUser || activeUserId.value == null) return
-  if (!draft.value.trim()) return
+  const uid = userStore.currentUser?.userId
+  if (!uid || activeUserId.value == null) return
+  if (activeUserId.value === uid) return // 不允许给自己发消息
+  const text = draft.value.trim()
+  if (!text || sending.value) return
+  sending.value = true
+  // 看门狗：万一本次发送/刷新卡住，最多 5 秒后释放发送锁，避免"点了没反应"
+  const guard = setTimeout(() => {
+    sending.value = false
+  }, 5000)
   try {
-    await sendMessage(userStore.currentUser.userId, activeUserId.value, draft.value.trim())
+    await sendMessage(uid, activeUserId.value, text)
     draft.value = ''
     await load()
-  } catch {
-    ElMessage.error('发送失败，请稍后重试')
+  } catch (err) {
+    const msg = (err as { message?: string })?.message || '发送失败，请稍后重试'
+    ElMessage.error(`发送失败：${msg}`)
+  } finally {
+    clearTimeout(guard)
+    sending.value = false
   }
 }
 
@@ -116,7 +164,7 @@ function onPickImage(e: Event) {
   if (!file) return
   const uid = userStore.currentUser?.userId
   const peerId = activeUserId.value
-  if (!uid || peerId == null) return
+  if (!uid || peerId == null || peerId === uid) return
   uploadImage(file).then(async (url) => {
     await sendMessage(uid, peerId, '', url)
     await load()
@@ -125,28 +173,46 @@ function onPickImage(e: Event) {
 }
 
 async function selectUser(id: string) {
-  activeUserId.value = id
-  if (userStore.currentUser) {
-    await markConversationRead(userStore.currentUser.userId, id)
-  }
+  await openConversation(id)
 }
 
 function goProfile(id: string) {
   router.push({ name: 'user-profile', params: { id } })
 }
 
+// 切换会话时滚到最新
+watch(activeUserId, async () => {
+  await nextTick()
+  scrollChatToBottom()
+})
+
 watch(
   () => userStore.currentUser?.userId,
-  () => {
+  (id) => {
+    // 切换账号时先清空旧账号残留，避免把上一个账号的会话/聊天记录显示给无关的人
     activeUserId.value = null
-    load()
+    messages.value = []
+    users.value = []
+    if (id) load()
+  },
+)
+
+// 在消息页内点"私信某人"（同路由 query.to 变化）时切换会话，避免停留在上一个会话
+watch(
+  () => route.query.to as string | undefined,
+  (to) => {
+    if (!to || !userStore.currentUser) return
+    openConversation(to)
   },
 )
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-  load()
+  // 从商品页"私信卖家"跳过来时直接打开该会话；否则先加载会话列表
+  const to = route.query.to as string | undefined
+  if (to) openConversation(to)
+  else load()
   pollTimer = setInterval(() => {
     if (userStore.isLoggedIn) load()
   }, 3000)
@@ -166,16 +232,17 @@ onBeforeUnmount(() => {
       <div class="conv-list">
         <div
           v-for="c in conversations"
-          :key="c.user?.userId"
+          :key="c.id"
           class="conv-item"
-          :class="{ active: activeUserId === c.user?.userId }"
-          @click="selectUser(c.user!.userId)"
+          :class="{ active: activeUserId === c.id }"
+          @click="selectUser(c.id)"
         >
           <el-avatar :size="40" :src="c.user?.avatar" />
           <div class="conv-info">
-            <div class="conv-name">{{ c.user?.userName }}</div>
+            <div class="conv-name">{{ c.user?.userName || '未知用户' }}</div>
             <div class="conv-last ellipsis">{{ c.last?.image ? '[图片]' : c.last?.content }}</div>
           </div>
+          <span v-if="c.unread" class="conv-unread">{{ c.unread > 99 ? '99+' : c.unread }}</span>
         </div>
         <el-empty v-if="!conversations.length" description="暂无消息" />
       </div>
@@ -186,7 +253,7 @@ onBeforeUnmount(() => {
             <el-avatar :size="28" :src="activeUser.avatar" />
             <span class="chat-header-name">{{ activeUser.userName }}</span>
           </div>
-          <div class="chat-body">
+          <div ref="chatBody" class="chat-body">
             <div
               v-for="m in activeMessages"
               :key="m.msgId"
@@ -198,6 +265,11 @@ onBeforeUnmount(() => {
                 <span v-else>{{ m.content }}</span>
               </div>
             </div>
+            <el-empty
+              v-if="activeUser && !activeMessages.length"
+              description="暂无聊天记录，发条消息开始吧"
+              :image-size="60"
+            />
           </div>
           <div class="chat-input">
             <label class="img-btn">
@@ -263,6 +335,19 @@ onBeforeUnmount(() => {
 .conv-last {
   font-size: 12px;
   color: var(--text-sub);
+}
+.conv-unread {
+  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  box-sizing: border-box;
 }
 .chat-window {
   flex: 1;

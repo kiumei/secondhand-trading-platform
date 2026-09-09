@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useFavoriteStore } from '@/stores/favorite'
@@ -42,6 +42,10 @@ watch(() => userStore.isLoggedIn, (v) => {
 
 // 路由变化时刷新角标（读完消息 / 处理完订单返回后，红点随之更新）
 watch(() => route.fullPath, () => loadBadges())
+
+// 消息页内已读某会话后即时刷新红点（无需切换路由）
+onMounted(() => window.addEventListener('messages-read', loadBadges))
+onBeforeUnmount(() => window.removeEventListener('messages-read', loadBadges))
 
 function go(name: string) {
   if (!userStore.isLoggedIn) {

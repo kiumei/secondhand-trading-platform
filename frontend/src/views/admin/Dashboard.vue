@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { listGoods } from '@/api/goods'
+import { listAdminGoods } from '@/api/goods'
 import { listAdminOrders } from '@/api/order'
 import { listUsers, getUser } from '@/api/user'
 import { listReports } from '@/api/report'
-import type { Goods } from '@/types'
+import type { Goods, GoodsStatus } from '@/types'
 
 const router = useRouter()
 
+const loading = ref(false)
 const stats = ref({
   goods: 0,
   users: 0,
@@ -20,25 +21,35 @@ const pendingGoods = ref<Goods[]>([])
 const sellerNames = ref<Record<string, string>>({})
 
 onMounted(async () => {
-  const [goods, orders, users, reports] = await Promise.all([
-    listGoods(),
-    listAdminOrders(),
-    listUsers(),
-    listReports(),
-  ])
-  stats.value = {
-    goods: goods.length,
-    users: users.length,
-    orders: orders.length,
-    reports: reports.filter((r) => r.handleStatus === 0).length,
-    sales: orders
-      .filter((o) => o.orderStatus === 2 || o.orderStatus === 3)
-      .reduce((s, o) => s + o.orderPrice, 0),
-  }
-  pendingGoods.value = goods.filter((g) => g.goodsStatus === 0)
-  for (const g of pendingGoods.value) {
-    const u = await getUser(g.publishUserId)
-    if (u) sellerNames.value[g.publishUserId] = u.userName
+  loading.value = true
+  try {
+    // 公开 listGoods 只返回上架商品；这里按状态拉管理员全量，统计与待审核列表才准确
+    const allGoods: Goods[] = []
+    const statuses: GoodsStatus[] = [0, 1, 2, 3, 4]
+    for (const s of statuses) {
+      allGoods.push(...(await listAdminGoods(s)))
+    }
+    const [orders, users, reports] = await Promise.all([
+      listAdminOrders(),
+      listUsers(),
+      listReports(),
+    ])
+    stats.value = {
+      goods: allGoods.length,
+      users: users.length,
+      orders: orders.length,
+      reports: reports.filter((r) => r.handleStatus === 0).length,
+      sales: orders
+        .filter((o) => o.orderStatus === 2 || o.orderStatus === 3)
+        .reduce((s, o) => s + o.orderPrice, 0),
+    }
+    pendingGoods.value = allGoods.filter((g) => g.goodsStatus === 0)
+    for (const g of pendingGoods.value) {
+      const u = await getUser(g.publishUserId)
+      if (u) sellerNames.value[g.publishUserId] = u.userName
+    }
+  } finally {
+    loading.value = false
   }
 })
 
@@ -55,7 +66,7 @@ const cards = [
 </script>
 
 <template>
-  <div class="dashboard">
+  <div class="dashboard" v-loading="loading" element-loading-text="加载中…">
     <div class="stat-grid">
       <div v-for="c in cards" :key="c.key" class="stat-card">
         <div class="stat-value" :style="{ color: c.color }">{{ stats[c.key as keyof typeof stats] }}</div>

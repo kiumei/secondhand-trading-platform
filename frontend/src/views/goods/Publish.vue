@@ -184,7 +184,7 @@ async function submit() {
 
 <template>
   <div class="publish page-container">
-    <div class="form-card">
+    <div class="form-card" v-loading="submitting" element-loading-text="发布中…">
       <h2 class="page-title">发布商品</h2>
 
       <!-- 基础信息 -->
