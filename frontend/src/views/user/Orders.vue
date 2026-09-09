@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listOrders, updateOrderStatus, updateOrderShippingAddress } from '@/api/order'
+import { listOrders, updateOrderStatus } from '@/api/order'
 import { listGoods } from '@/api/goods'
 import { getUser } from '@/api/user'
 import { sendMessage } from '@/api/message'
@@ -104,20 +104,6 @@ async function confirm(order: Order) {
   load()
 }
 
-async function editAddress(order: Order) {
-  const { value, action } = await ElMessageBox.prompt('请修改收货地址', '修改收货地址', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    inputValue: order.shippingAddress ?? '',
-    inputPlaceholder: '请输入收货地址',
-  })
-  if (action !== 'confirm') return
-  await updateOrderShippingAddress(order.orderId, value)
-  ElMessage.success('地址已修改')
-  detailVisible.value = false
-  load()
-}
-
 async function cancel(order: Order) {
   try {
     await ElMessageBox.confirm('确定取消该订单？取消后商品将重新上架', '提示', { type: 'warning' })
@@ -160,7 +146,6 @@ onMounted(load)
             <div class="order-price price">¥{{ o.orderPrice }}</div>
           </div>
           <div class="order-actions" @click.stop>
-            <el-button v-if="o.orderStatus === 0 && isBuyTab" size="small" @click="editAddress(o)">修改地址</el-button>
             <el-button v-if="o.orderStatus === 0 && isBuyTab" type="primary" size="small" @click="pay(o)">去支付</el-button>
             <el-button v-if="o.orderStatus === 0 && isBuyTab" type="danger" size="small" @click="cancel(o)">取消订单</el-button>
             <el-button v-if="o.orderStatus === 1 && !isBuyTab" type="primary" size="small" @click="ship(o)">发货</el-button>

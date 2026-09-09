@@ -1,32 +1,22 @@
-import { getDB, persist, delay } from './mock/db'
+import http from './http'
 import type { Category } from '@/types'
 
+// 分类列表（公开）
 export function listCategories(): Promise<Category[]> {
-  return delay(getDB().categories.slice())
+  return http.get('/categories') as unknown as Promise<Category[]>
 }
 
+// 新增分类（管理员）
 export function createCategory(cateName: string, parentId = 0): Promise<Category> {
-  const db = getDB()
-  const cateId = String(db.categories.reduce((m, c) => Math.max(m, Number(c.cateId)), 0) + 1)
-  const c: Category = { cateId, cateName, parentId }
-  db.categories.push(c)
-  persist()
-  return delay(c)
+  return http.post('/admin/categories', { cateName, parentId }) as unknown as Promise<Category>
 }
 
+// 更新分类（管理员）
 export function updateCategory(id: string, cateName: string): Promise<void> {
-  const db = getDB()
-  const c = db.categories.find((x) => x.cateId === id)
-  if (c) {
-    c.cateName = cateName
-    persist()
-  }
-  return delay(undefined)
+  return http.put(`/admin/categories/${id}`, { cateName }) as unknown as Promise<void>
 }
 
+// 删除分类（管理员）
 export function deleteCategory(id: string): Promise<void> {
-  const db = getDB()
-  db.categories = db.categories.filter((c) => c.cateId !== id)
-  persist()
-  return delay(undefined)
+  return http.delete(`/admin/categories/${id}`) as unknown as Promise<void>
 }

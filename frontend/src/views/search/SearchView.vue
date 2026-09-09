@@ -2,37 +2,20 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listGoods } from '@/api/goods'
-import type { Goods } from '@/types'
+import { listCategories } from '@/api/admin'
+import type { Goods, Category } from '@/types'
 import GoodsGrid from '@/components/GoodsGrid.vue'
-import { categoryGroups, getSubIds } from '@/constants/categories'
 
 const route = useRoute()
 const router = useRouter()
 
 const keyword = ref((route.query.q as string) || '')
-const categoryPath = ref<string[]>([])
+const category = ref((route.query.category as string) || '')
+const categories = ref<Category[]>([])
 const minPrice = ref<number>()
 const maxPrice = ref<number>()
 const goods = ref<Goods[]>([])
 const loading = ref(false)
-
-const categoryOptions = categoryGroups.map((g) => ({
-  value: g.cateId,
-  label: g.cateName,
-  children: g.children.map((c) => ({ value: c.cateId, label: c.cateName })),
-}))
-
-// 从 query 初始化分类：支持 group=父类id 或 category=子类id
-const groupParam = (route.query.group as string) || ''
-const categoryParam = (route.query.category as string) || ''
-if (groupParam) {
-  const g = categoryGroups.find((x) => x.cateId === groupParam)
-  if (g) categoryPath.value = [g.cateId]
-}
-if (categoryParam) {
-  const g = categoryGroups.find((x) => x.children.some((c) => c.cateId === categoryParam))
-  if (g) categoryPath.value = [g.cateId, categoryParam]
-}
 
 async function load() {
   loading.value = true
@@ -42,13 +25,8 @@ async function load() {
     maxPrice: maxPrice.value,
     status: 1, // 上架
   })
-  // 分类筛选（客户端）：父类 → 其下所有子类；子类 → 单个子类
-  const last = categoryPath.value[categoryPath.value.length - 1]
-  if (categoryPath.value.length === 1 && categoryPath.value[0] != null) {
-    const ids = getSubIds(categoryPath.value[0])
-    list = list.filter((g) => ids.includes(g.cateId))
-  } else if (last != null) {
-    list = list.filter((g) => g.cateId === last)
+  if (category.value) {
+    list = list.filter((g) => g.cateId === category.value)
   }
   goods.value = list
   loading.value = false
@@ -56,7 +34,7 @@ async function load() {
 
 function reset() {
   keyword.value = ''
-  categoryPath.value = []
+  category.value = ''
   minPrice.value = undefined
   maxPrice.value = undefined
   load()
@@ -70,7 +48,10 @@ watch(
   },
 )
 
-onMounted(load)
+onMounted(async () => {
+  categories.value = await listCategories()
+  load()
+})
 </script>
 
 <template>
@@ -82,14 +63,9 @@ onMounted(load)
       </div>
       <div class="filter-row">
         <span class="filter-label">分类</span>
-        <el-cascader
-          v-model="categoryPath"
-          :options="categoryOptions"
-          :props="{ expandTrigger: 'hover' }"
-          clearable
-          placeholder="全部分类"
-          style="width: 240px"
-        />
+        <el-select v-model="category" clearable placeholder="全部分类" style="width: 240px">
+          <el-option v-for="c in categories" :key="c.cateId" :label="c.cateName" :value="c.cateId" />
+        </el-select>
       </div>
       <div class="filter-row">
         <span class="filter-label">价格</span>

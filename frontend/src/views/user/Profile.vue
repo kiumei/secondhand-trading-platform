@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { listGoods } from '@/api/goods'
+import { listMyGoods } from '@/api/goods'
 import type { Goods } from '@/types'
 import GoodsGrid from '@/components/GoodsGrid.vue'
 import { flattenLocations } from '@/constants/locations'
@@ -49,7 +49,7 @@ async function changePassword() {
 
 async function loadMyGoods() {
   if (!userStore.currentUser) return
-  myGoods.value = await listGoods({ sellerId: userStore.currentUser.userId })
+  myGoods.value = await listMyGoods()
 }
 loadMyGoods()
 </script>

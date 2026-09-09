@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { listGoods } from '@/api/goods'
 import { useFavoriteStore } from '@/stores/favorite'
 import type { Goods } from '@/types'
 import GoodsGrid from '@/components/GoodsGrid.vue'
@@ -11,11 +10,7 @@ const loading = ref(false)
 
 async function load() {
   await favoriteStore.refresh()
-  loading.value = true
-  const ids = favoriteStore.favorites.map((f) => f.goodsId)
-  const all = await listGoods()
-  goods.value = all.filter((g) => ids.includes(g.goodsId))
-  loading.value = false
+  goods.value = favoriteStore.favorites
 }
 
 onMounted(load)

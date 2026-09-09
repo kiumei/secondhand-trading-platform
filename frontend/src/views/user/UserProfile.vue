@@ -28,8 +28,9 @@ async function load() {
   loading.value = true
   profile.value = (await getUser(userId.value)) ?? null
   if (profile.value) {
-    goods.value = await listGoods({ sellerId: profile.value.userId, status: 1 })
-    const sold = await listGoods({ sellerId: profile.value.userId })
+    const all = await listGoods()
+    goods.value = all.filter((g) => g.publishUserId === userId.value && g.goodsStatus === 1)
+    const sold = all.filter((g) => g.publishUserId === userId.value)
     const list: Evaluate[] = []
     for (const g of sold) {
       list.push(...(await listEvaluates(g.goodsId)))

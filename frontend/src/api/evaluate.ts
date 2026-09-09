@@ -1,36 +1,62 @@
-import { getDB, persist, nextId, delay } from './mock/db'
+import http from './http'
 import type { Evaluate } from '@/types'
 
-export function listEvaluates(goodsId?: string): Promise<Evaluate[]> {
-  let list = getDB().evaluates.slice()
-  if (goodsId != null) list = list.filter((e) => e.goodsId === goodsId)
-  list.sort((a, b) => b.evaluateTime.localeCompare(a.evaluateTime))
-  return delay(list)
+interface ApiEvaluation {
+  evaluateId: string
+  orderId: string
+  goodsId: string
+  evaluateUserId: string
+  score: number
+  evaluateContent: string
+  evaluateTime: string
 }
 
-export function createEvaluate(input: {
+function toEvaluation(api: ApiEvaluation): Evaluate {
+  return {
+    evaluateId: api.evaluateId,
+    orderId: api.orderId,
+    goodsId: api.goodsId,
+    evaluateUserId: api.evaluateUserId,
+    score: api.score as 1 | 2 | 3 | 4 | 5,
+    evaluateContent: api.evaluateContent,
+    evaluateTime: api.evaluateTime,
+  }
+}
+
+// 某件商品的评价列表（公开）
+export async function listEvaluates(goodsId: string): Promise<Evaluate[]> {
+  const data = (await http.get(`/goods/${goodsId}/evaluations`, {
+    params: { page: 1, pageSize: 50 },
+  })) as { items: ApiEvaluation[] }
+  return (data.items ?? []).map(toEvaluation)
+}
+
+// 管理员评价列表
+export async function listAdminEvaluations(): Promise<Evaluate[]> {
+  const data = (await http.get('/admin/evaluations', {
+    params: { page: 1, pageSize: 50 },
+  })) as { items: ApiEvaluation[] }
+  return (data.items ?? []).map(toEvaluation)
+}
+
+export async function createEvaluate(input: {
   orderId: string
   goodsId: string
   evaluateUserId: string
   score: 1 | 2 | 3 | 4 | 5
   evaluateContent: string
 }): Promise<Evaluate | null> {
-  const db = getDB()
-  // 同一订单只能评价一次（对应数据库 UNIQUE(order_id) 约束）
-  if (db.evaluates.some((e) => e.orderId === input.orderId)) return delay(null)
-  const ev: Evaluate = {
-    evaluateId: nextId('evaluate'),
-    ...input,
-    evaluateTime: new Date().toLocaleString('zh-CN'),
+  try {
+    const api = (await http.post(`/orders/${input.orderId}/evaluation`, {
+      score: input.score,
+      content: input.evaluateContent,
+    })) as ApiEvaluation
+    return toEvaluation(api)
+  } catch {
+    return null
   }
-  db.evaluates.unshift(ev)
-  persist()
-  return delay(ev)
 }
 
-export function deleteEvaluate(id: string): Promise<void> {
-  const db = getDB()
-  db.evaluates = db.evaluates.filter((e) => e.evaluateId !== id)
-  persist()
-  return delay(undefined)
+export async function deleteEvaluate(id: string): Promise<void> {
+  await http.delete(`/admin/evaluations/${id}`)
 }

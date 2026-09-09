@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listUsers, deleteUser, setUserStatus, resetPassword } from '@/api/user'
+import { listUsers, setUserStatus, resetPassword } from '@/api/user'
 import type { User } from '@/types'
 
 const users = ref<User[]>([])
@@ -11,17 +11,6 @@ async function load() {
   loading.value = true
   users.value = await listUsers()
   loading.value = false
-}
-
-async function remove(u: User) {
-  if (u.role === 1) {
-    ElMessage.warning('不能删除管理员')
-    return
-  }
-  await ElMessageBox.confirm(`确定删除用户「${u.userName}」？`, '提示', { type: 'warning' })
-  await deleteUser(u.userId)
-  ElMessage.success('已删除')
-  load()
 }
 
 async function toggleBan(u: User) {
@@ -86,7 +75,6 @@ onMounted(load)
             {{ row.status === 1 ? '解封' : '封禁' }}
           </el-button>
           <el-button size="small" @click="resetPwd(row)">重置密码</el-button>
-          <el-button type="danger" size="small" :disabled="row.role === 1" @click="remove(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>

@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { ref, reactive, onBeforeUnmount, shallowRef } from 'vue'
+import { ref, reactive, onBeforeUnmount, onMounted, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
 import { createGoods } from '@/api/goods'
+import { uploadImage } from '@/api/media'
+import { listCategories } from '@/api/admin'
 import { useUserStore } from '@/stores/user'
-import { categoryGroups } from '@/constants/categories'
-import type { QualityLevel, TradeType } from '@/types'
+import type { QualityLevel, TradeType, Category } from '@/types'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -22,16 +23,12 @@ const qualityLevels: { value: QualityLevel; label: string }[] = [
   { value: 5, label: '6成新及以下' },
 ]
 
-// 级联选择：父类 + 子类
-const categoryOptions = categoryGroups.map((g) => ({
-  value: g.cateId,
-  label: g.cateName,
-  children: g.children.map((c) => ({ value: c.cateId, label: c.cateName })),
-}))
+// 单级分类
+const categories = ref<Category[]>([])
 
 const form = reactive({
   title: '',
-  categoryPath: [] as string[],
+  cateId: '',
   qualityLevel: 1 as QualityLevel,
   sellPrice: 0,
   originalPrice: undefined as number | undefined,
@@ -42,6 +39,8 @@ const form = reactive({
 const mainImage = ref('')
 // 更多图片（最多 4 张）
 const extraImages = ref<string[]>([])
+const mainImageFile = ref<File | null>(null)
+const extraImageFiles = ref<File[]>([])
 
 // 富文本编辑器
 const editorRef = shallowRef()
@@ -58,6 +57,10 @@ function handleCreated(editor: any) {
 
 onBeforeUnmount(() => {
   editorRef.value?.destroy()
+})
+
+onMounted(async () => {
+  categories.value = await listCategories()
 })
 
 // ---- 图片上传：读取为 base64 预览，并压缩（最长边 800px，JPEG 0.75）避免撑爆 localStorage 配额 ----
@@ -97,6 +100,7 @@ function onMainImageChange(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+  mainImageFile.value = file
   readAsDataUrl(file).then((url) => {
     mainImage.value = url
   })
@@ -110,7 +114,9 @@ function onExtraImagesChange(e: Event) {
   if (files.length > remain) {
     ElMessage.warning(`最多上传 4 张图片，还能再传 ${remain} 张`)
   }
-  Promise.all(files.slice(0, remain).map(readAsDataUrl)).then((urls) => {
+  const accepted = files.slice(0, remain)
+  extraImageFiles.value.push(...accepted)
+  Promise.all(accepted.map(readAsDataUrl)).then((urls) => {
     extraImages.value.push(...urls)
   })
   input.value = ''
@@ -118,13 +124,14 @@ function onExtraImagesChange(e: Event) {
 
 function removeExtraImage(index: number) {
   extraImages.value.splice(index, 1)
+  extraImageFiles.value.splice(index, 1)
 }
 
 // ---- 提交 ----
 function validate(): string | null {
   if (!mainImage.value) return '请上传商品主图'
   if (!form.title.trim()) return '请输入商品名称'
-  if (!form.categoryPath.length) return '请选择商品分类'
+  if (!form.cateId) return '请选择商品分类'
   if (!form.sellPrice || form.sellPrice <= 0) return '请输入价格'
   return null
 }
@@ -137,22 +144,28 @@ async function submit() {
   }
   if (!userStore.currentUser) return
   submitting.value = true
-  const images = [mainImage.value, ...extraImages.value]
-  const cateId = form.categoryPath[form.categoryPath.length - 1] ?? ''
-  await createGoods({
-    title: form.title.trim(),
-    goodsDesc: editorHtml.value,
-    sellPrice: form.sellPrice,
-    originalPrice: form.originalPrice,
-    cateId,
-    tradeType: form.tradeType,
-    qualityLevel: form.qualityLevel,
-    images,
-    publishUserId: userStore.currentUser.userId,
-  })
-  submitting.value = false
-  ElMessage.success('发布成功，商品进入待审核，可在「我的 → 我发布的商品」查看审核进度')
-  router.push({ name: 'profile' })
+  try {
+    // 上传图片，拿后端返回的 URL
+    const imageUrls: string[] = []
+    if (mainImageFile.value) imageUrls.push(await uploadImage(mainImageFile.value))
+    for (const f of extraImageFiles.value) imageUrls.push(await uploadImage(f))
+    const cateId = form.cateId
+    await createGoods({
+      title: form.title.trim(),
+      goodsDesc: editorHtml.value,
+      sellPrice: form.sellPrice,
+      originalPrice: form.originalPrice,
+      cateId,
+      tradeType: form.tradeType,
+      qualityLevel: form.qualityLevel,
+      images: imageUrls,
+      publishUserId: userStore.currentUser.userId,
+    })
+    ElMessage.success('发布成功，商品进入待审核，可在「我的 → 我发布的商品」查看审核进度')
+    router.push({ name: 'profile' })
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -218,14 +231,14 @@ async function submit() {
         <!-- 商品分类 -->
         <div class="field">
           <div class="field-label"><span class="required">*</span>商品分类</div>
-          <el-cascader
-            v-model="form.categoryPath"
-            :options="categoryOptions"
-            :props="{ expandTrigger: 'hover' }"
+          <el-select
+            v-model="form.cateId"
             placeholder="请选择商品分类"
             clearable
             style="width: 100%"
-          />
+          >
+            <el-option v-for="c in categories" :key="c.cateId" :label="c.cateName" :value="c.cateId" />
+          </el-select>
         </div>
 
         <!-- 商品成色 -->

@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { listGoods } from '@/api/goods'
-import { listOrders } from '@/api/order'
+import { listAdminOrders } from '@/api/order'
 import { listUsers, getUser } from '@/api/user'
 import { listReports } from '@/api/report'
 import type { Goods } from '@/types'
@@ -22,7 +22,7 @@ const sellerNames = ref<Record<string, string>>({})
 onMounted(async () => {
   const [goods, orders, users, reports] = await Promise.all([
     listGoods(),
-    listOrders(),
+    listAdminOrders(),
     listUsers(),
     listReports(),
   ])

@@ -1,37 +1,56 @@
-import { getDB, persist, nextId, delay } from './mock/db'
+import http from './http'
 import type { Report, ReportType } from '@/types'
 
-export function listReports(): Promise<Report[]> {
-  const list = getDB().reports.slice().sort((a, b) => Number(b.reportId) - Number(a.reportId))
-  return delay(list)
+interface ApiReport {
+  reportId: string
+  reportUserId: string
+  goodsId: string
+  reportType: number
+  reportContent: string
+  proofImg?: string | null
+  handleStatus: number
+  handleResult?: string | null
+  reportTime?: string | null
 }
 
-export function createReport(input: {
+function toReport(api: ApiReport): Report {
+  return {
+    reportId: api.reportId,
+    reportUserId: api.reportUserId,
+    goodsId: api.goodsId,
+    reportType: api.reportType as ReportType,
+    reportContent: api.reportContent,
+    proofImg: api.proofImg ?? undefined,
+    handleStatus: api.handleStatus,
+    handleResult: api.handleResult ?? undefined,
+    reportTime: api.reportTime ?? undefined,
+  }
+}
+
+// 管理员举报列表
+export async function listReports(): Promise<Report[]> {
+  const data = (await http.get('/admin/reports', { params: { page: 1, pageSize: 50 } })) as {
+    items: ApiReport[]
+  }
+  return (data.items ?? []).map(toReport)
+}
+
+export async function createReport(input: {
   goodsId: string
   reportUserId: string
   reportType: ReportType
   reportContent: string
   proofImg?: string
 }): Promise<Report> {
-  const db = getDB()
-  const r: Report = {
-    reportId: nextId('report'),
-    ...input,
-    handleStatus: 0,
-    reportTime: new Date().toLocaleString('zh-CN'),
-  }
-  db.reports.unshift(r)
-  persist()
-  return delay(r)
+  const api = (await http.post('/reports', {
+    goodsId: input.goodsId,
+    reportType: input.reportType,
+    reportContent: input.reportContent,
+    proofImg: input.proofImg,
+  })) as ApiReport
+  return toReport(api)
 }
 
-export function handleReport(id: string, handleResult: string): Promise<void> {
-  const db = getDB()
-  const r = db.reports.find((x) => x.reportId === id)
-  if (r) {
-    r.handleStatus = 1
-    r.handleResult = handleResult
-    persist()
-  }
-  return delay(undefined)
+export async function handleReport(id: string, handleResult: string): Promise<void> {
+  await http.post(`/admin/reports/${id}/handle`, { handleResult })
 }

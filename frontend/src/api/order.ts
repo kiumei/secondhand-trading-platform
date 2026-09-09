@@ -1,74 +1,89 @@
-import { getDB, persist, nextId, delay } from './mock/db'
+import http from './http'
 import type { Order, OrderStatus } from '@/types'
 
-export function listOrders(query: { buyerId?: string; sellerId?: string } = {}): Promise<Order[]> {
-  let list = getDB().orders.slice()
-  if (query.buyerId != null) list = list.filter((o) => o.buyerId === query.buyerId)
-  if (query.sellerId != null) list = list.filter((o) => o.sellerId === query.sellerId)
-  list.sort((a, b) => b.createTime.localeCompare(a.createTime))
-  return delay(list)
+interface ApiOrder {
+  orderId: string
+  buyerId: string
+  sellerId: string
+  goodsId: string
+  orderPrice: string
+  payStatus: number
+  orderStatus: number
+  payTime?: string | null
+  finishTime?: string | null
+  createTime: string
+  shippingAddress?: string | null
 }
 
-export function createOrder(input: {
+function toOrder(api: ApiOrder): Order {
+  return {
+    orderId: api.orderId,
+    buyerId: api.buyerId,
+    sellerId: api.sellerId,
+    goodsId: api.goodsId,
+    orderPrice: parseFloat(api.orderPrice),
+    payStatus: api.payStatus,
+    orderStatus: api.orderStatus as OrderStatus,
+    payTime: api.payTime ?? undefined,
+    finishTime: api.finishTime ?? undefined,
+    createTime: api.createTime,
+    shippingAddress: api.shippingAddress ?? undefined,
+  }
+}
+
+// 查询订单：buyerId 表示买到的，sellerId 表示卖出的
+export async function listOrders(
+  query: { buyerId?: string; sellerId?: string } = {},
+): Promise<Order[]> {
+  const side = query.sellerId != null ? 'sell' : 'buy'
+  const data = (await http.get('/orders', { params: { side, page: 1, pageSize: 50 } })) as {
+    items: ApiOrder[]
+  }
+  return (data.items ?? []).map(toOrder)
+}
+
+export async function createOrder(input: {
   goodsId: string
   buyerId: string
   sellerId: string
   orderPrice: number
   shippingAddress?: string
 }): Promise<Order | null> {
-  const db = getDB()
-  const goods = db.goods.find((g) => g.goodsId === input.goodsId)
-  if (!goods || goods.goodsStatus !== 1) return delay(null)
-  const activeOrder = db.orders.some((o) => o.goodsId === input.goodsId && o.orderStatus !== 4)
-  if (activeOrder) return delay(null)
-  const order: Order = {
-    orderId: nextId('order'),
-    ...input,
-    payStatus: 0,
-    orderStatus: 0, // 待付款
-    createTime: new Date().toLocaleString('zh-CN'),
+  try {
+    const api = (await http.post('/orders', {
+      goodsId: input.goodsId,
+      shippingAddress: input.shippingAddress,
+    })) as ApiOrder
+    return toOrder(api)
+  } catch {
+    return null
   }
-  db.orders.unshift(order)
-  goods.purchasable = false
-  persist()
-  return delay(order)
 }
 
-export function updateOrderShippingAddress(id: string, address: string): Promise<void> {
-  const db = getDB()
-  const o = db.orders.find((x) => x.orderId === id)
-  if (o) {
-    o.shippingAddress = address
-    persist()
-  }
-  return delay(undefined)
+// 状态动作：待发货→支付、待收货→发货、完成→确认、取消→取消
+const actionByStatus: Record<number, string> = {
+  1: 'mock-pay',
+  2: 'deliver',
+  3: 'complete',
+  4: 'cancel',
 }
 
-export function updateOrderStatus(id: string, status: OrderStatus): Promise<void> {
-  const db = getDB()
-  const o = db.orders.find((x) => x.orderId === id)
-  if (o) {
-    o.orderStatus = status
-    if (status === 1) {
-      // 模拟支付
-      o.payStatus = 1
-      o.payTime = new Date().toLocaleString('zh-CN')
-    } else if (status === 3) {
-      // 订单完成 → 商品已售（对应触发器）
-      o.finishTime = new Date().toLocaleString('zh-CN')
-      const goods = db.goods.find((g) => g.goodsId === o.goodsId)
-      if (goods) {
-        goods.goodsStatus = 3
-        goods.purchasable = false
-      }
-    } else if (status === 4) {
-      // 取消 → 商品恢复可购买
-      const goods = db.goods.find((g) => g.goodsId === o.goodsId)
-      if (goods) {
-        goods.purchasable = goods.goodsStatus === 1
-      }
-    }
-    persist()
+export async function updateOrderStatus(id: string, status: OrderStatus): Promise<void> {
+  const action = actionByStatus[status]
+  if (action) {
+    await http.post(`/orders/${id}/${action}`)
   }
-  return delay(undefined)
+}
+
+// 后端不提供下单后修改地址的接口
+export async function updateOrderShippingAddress(_id: string, _address: string): Promise<void> {
+  // no-op
+}
+
+// 管理员订单列表
+export async function listAdminOrders(status?: number): Promise<Order[]> {
+  const params: Record<string, string | number> = { page: 1, pageSize: 50 }
+  if (status != null) params.status = status
+  const data = (await http.get('/admin/orders', { params })) as { items: ApiOrder[] }
+  return (data.items ?? []).map(toOrder)
 }

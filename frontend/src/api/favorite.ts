@@ -1,34 +1,23 @@
-import { getDB, persist, nextId, delay } from './mock/db'
-import type { Favorite } from '@/types'
+import http from './http'
+import { toGoods } from './goods'
+import type { Goods } from '@/types'
 
-export function listFavorites(userId: string): Promise<Favorite[]> {
-  const list = getDB().favorites
-    .filter((f) => f.userId === userId)
-    .sort((a, b) => b.createTime.localeCompare(a.createTime))
-  return delay(list)
-}
-
-export function isFavorite(userId: string, goodsId: string): Promise<boolean> {
-  return delay(getDB().favorites.some((f) => f.userId === userId && f.goodsId === goodsId))
-}
-
-export function addFavorite(userId: string, goodsId: string): Promise<void> {
-  const db = getDB()
-  if (!db.favorites.some((f) => f.userId === userId && f.goodsId === goodsId)) {
-    db.favorites.push({
-      favoriteId: nextId('favorite'),
-      userId,
-      goodsId,
-      createTime: new Date().toLocaleString('zh-CN'),
-    })
-    persist()
+// 收藏列表返回的是商品列表（Goods）
+export async function listFavorites(): Promise<Goods[]> {
+  const data = (await http.get('/favorites', { params: { page: 1, pageSize: 200 } })) as {
+    items: unknown[]
   }
-  return delay(undefined)
+  return (data.items ?? []).map((g) => toGoods(g as never))
 }
 
-export function removeFavorite(userId: string, goodsId: string): Promise<void> {
-  const db = getDB()
-  db.favorites = db.favorites.filter((f) => !(f.userId === userId && f.goodsId === goodsId))
-  persist()
-  return delay(undefined)
+export async function isFavorite(goodsId: string): Promise<boolean> {
+  return (await http.get(`/favorites/${goodsId}`)) as boolean
+}
+
+export async function addFavorite(goodsId: string): Promise<void> {
+  await http.post('/favorites', { goodsId })
+}
+
+export async function removeFavorite(goodsId: string): Promise<void> {
+  await http.delete(`/favorites/${goodsId}`)
 }

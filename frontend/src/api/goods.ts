@@ -1,5 +1,49 @@
-import { getDB, persist, nextId, delay } from './mock/db'
+import http from './http'
 import type { Goods, GoodsStatus, TradeType, QualityLevel } from '@/types'
+
+// 后端返回的金额是字符串，这里定义 API 原始类型
+interface ApiGoods {
+  goodsId: string
+  publishUserId: string
+  cateId: string
+  title: string
+  sellPrice: string
+  originalPrice?: string | null
+  tradeType: number
+  goodsDesc: string
+  qualityLevel?: number | null
+  rejectReason?: string | null
+  publishTime: string
+  goodsStatus: number
+  sellerName?: string
+  cateName?: string
+  coverUrl?: string | null
+  purchasable: boolean
+  images?: string[]
+}
+
+export function toGoods(api: ApiGoods): Goods {
+  return {
+    goodsId: api.goodsId,
+    publishUserId: api.publishUserId,
+    cateId: api.cateId,
+    title: api.title,
+    sellPrice: parseFloat(api.sellPrice),
+    originalPrice: api.originalPrice != null ? parseFloat(api.originalPrice) : undefined,
+    tradeType: api.tradeType as TradeType,
+    goodsDesc: api.goodsDesc,
+    qualityLevel: (api.qualityLevel ?? undefined) as QualityLevel | undefined,
+    rejectReason: api.rejectReason ?? undefined,
+    publishTime: api.publishTime,
+    goodsStatus: api.goodsStatus as GoodsStatus,
+    sellerName: api.sellerName,
+    cateName: api.cateName,
+    coverUrl: api.coverUrl ?? undefined,
+    purchasable: api.purchasable,
+    images: api.images && api.images.length ? api.images : api.coverUrl ? [api.coverUrl] : [],
+    views: 0,
+  }
+}
 
 export interface GoodsQuery {
   keyword?: string
@@ -7,41 +51,26 @@ export interface GoodsQuery {
   minPrice?: number
   maxPrice?: number
   status?: GoodsStatus
-  sellerId?: string
 }
 
-function isPurchasable(goodsId: string): boolean {
-  const db = getDB()
-  const g = db.goods.find((x) => x.goodsId === goodsId)
-  if (!g || g.goodsStatus !== 1) return false
-  return !db.orders.some((o) => o.goodsId === goodsId && o.orderStatus !== 4)
+export async function listGoods(query: GoodsQuery = {}): Promise<Goods[]> {
+  const params: Record<string, string | number> = { page: 1, pageSize: 50 }
+  if (query.keyword) params.keyword = query.keyword
+  if (query.cateId) params.cateId = query.cateId
+  if (query.minPrice != null) params.minPrice = query.minPrice
+  if (query.maxPrice != null) params.maxPrice = query.maxPrice
+  if (query.status != null) params.status = query.status
+  const data = (await http.get('/goods', { params })) as { items: ApiGoods[] }
+  return (data.items ?? []).map(toGoods)
 }
 
-export function listGoods(query: GoodsQuery = {}): Promise<Goods[]> {
-  let list = getDB().goods.slice()
-  if (query.keyword) {
-    const kw = query.keyword.toLowerCase()
-    list = list.filter(
-      (g) => g.title.toLowerCase().includes(kw) || g.goodsDesc.toLowerCase().includes(kw),
-    )
+export async function getGoods(id: string): Promise<Goods | undefined> {
+  try {
+    const api = (await http.get(`/goods/${id}`)) as ApiGoods
+    return toGoods(api)
+  } catch {
+    return undefined
   }
-  if (query.cateId) list = list.filter((g) => g.cateId === query.cateId)
-  if (query.minPrice != null) list = list.filter((g) => g.sellPrice >= query.minPrice!)
-  if (query.maxPrice != null) list = list.filter((g) => g.sellPrice <= query.maxPrice!)
-  if (query.status != null) list = list.filter((g) => g.goodsStatus === query.status)
-  if (query.sellerId != null) list = list.filter((g) => g.publishUserId === query.sellerId)
-  list.sort((a, b) => b.publishTime.localeCompare(a.publishTime))
-  return delay(list.map((g) => ({ ...g, purchasable: isPurchasable(g.goodsId) })))
-}
-
-export function getGoods(id: string): Promise<Goods | undefined> {
-  const g = getDB().goods.find((x) => x.goodsId === id)
-  if (g) {
-    g.views += 1
-    persist()
-    return delay({ ...g, purchasable: isPurchasable(id) })
-  }
-  return delay(undefined)
 }
 
 export interface GoodsInput {
@@ -56,60 +85,57 @@ export interface GoodsInput {
   publishUserId: string
 }
 
-export function createGoods(input: GoodsInput): Promise<Goods> {
-  const db = getDB()
-  const seller = db.users.find((u) => u.userId === input.publishUserId)
-  const goods: Goods = {
-    goodsId: nextId('goods'),
-    ...input,
-    sellerName: seller?.userName ?? '匿名用户',
-    cateName: db.categories.find((c) => c.cateId === input.cateId)?.cateName,
-    goodsStatus: 0, // 待审核
-    publishTime: new Date().toLocaleString('zh-CN'),
-    views: 0,
-    purchasable: false,
+export async function createGoods(input: GoodsInput): Promise<Goods> {
+  const body = {
+    cateId: input.cateId,
+    title: input.title,
+    sellPrice: String(input.sellPrice),
+    originalPrice: input.originalPrice != null ? String(input.originalPrice) : null,
+    tradeType: input.tradeType,
+    goodsDesc: input.goodsDesc,
+    qualityLevel: input.qualityLevel ?? null,
+    images: input.images,
   }
-  db.goods.unshift(goods)
-  persist()
-  return delay(goods)
+  const api = (await http.post('/goods', body)) as ApiGoods
+  return toGoods(api)
 }
 
-export function updateGoods(
+export async function updateGoods(
   id: string,
   input: Omit<GoodsInput, 'images' | 'publishUserId'>,
 ): Promise<Goods | undefined> {
-  const db = getDB()
-  const g = db.goods.find((x) => x.goodsId === id)
-  if (g) {
-    Object.assign(g, input)
-    g.cateName = db.categories.find((c) => c.cateId === input.cateId)?.cateName
-    g.goodsStatus = 0 // 修改后重新进入待审核
-    g.rejectReason = undefined
-    g.purchasable = false
-    persist()
+  const body = {
+    cateId: input.cateId,
+    title: input.title,
+    sellPrice: String(input.sellPrice),
+    originalPrice: input.originalPrice != null ? String(input.originalPrice) : null,
+    tradeType: input.tradeType,
+    goodsDesc: input.goodsDesc,
+    qualityLevel: input.qualityLevel ?? null,
   }
-  return delay(g)
+  const api = (await http.put(`/admin/goods/${id}`, body)) as ApiGoods
+  return toGoods(api)
 }
 
-export function updateGoodsStatus(
+// 状态变更：通过 → 审核 PASS；驳回 → 审核 REJECT；下架 → off-shelf
+export async function updateGoodsStatus(
   id: string,
   status: GoodsStatus,
   rejectReason?: string,
 ): Promise<void> {
-  const db = getDB()
-  const g = db.goods.find((x) => x.goodsId === id)
-  if (g) {
-    g.goodsStatus = status
-    g.rejectReason = rejectReason
-    g.purchasable = status === 1
-    persist()
+  if (status === 1) {
+    await http.post(`/admin/goods/${id}/review`, { decision: 'PASS' })
+  } else if (status === 4) {
+    await http.post(`/admin/goods/${id}/review`, { decision: 'REJECT', rejectReason })
+  } else if (status === 2) {
+    await http.post(`/goods/${id}/off-shelf`)
   }
-  return delay(undefined)
 }
 
-export function deleteGoods(id: string): Promise<void> {
-  const db = getDB()
-  db.goods = db.goods.filter((x) => x.goodsId !== id)
-  persist()
-  return delay(undefined)
+// 我的商品（当前用户）
+export async function listMyGoods(status?: GoodsStatus): Promise<Goods[]> {
+  const params: Record<string, string | number> = { page: 1, pageSize: 50 }
+  if (status != null) params.status = status
+  const data = (await http.get('/users/me/goods', { params })) as { items: ApiGoods[] }
+  return (data.items ?? []).map(toGoods)
 }

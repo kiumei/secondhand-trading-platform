@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listEvaluates, deleteEvaluate } from '@/api/evaluate'
+import { listAdminEvaluations, deleteEvaluate } from '@/api/evaluate'
 import { listGoods } from '@/api/goods'
 import { getUser } from '@/api/user'
 import type { Evaluate, Goods } from '@/types'
@@ -13,7 +13,7 @@ const loading = ref(false)
 
 async function load() {
   loading.value = true
-  evaluates.value = await listEvaluates()
+  evaluates.value = await listAdminEvaluations()
   const all = await listGoods()
   goodsMap.value = Object.fromEntries(all.map((g) => [g.goodsId, g]))
   for (const e of evaluates.value) {

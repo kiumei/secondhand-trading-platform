@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { listOrders } from '@/api/order'
+import { listAdminOrders } from '@/api/order'
 import { listGoods } from '@/api/goods'
 import { getUser } from '@/api/user'
 import type { Order, Goods } from '@/types'
@@ -21,7 +21,7 @@ const statusText: Record<number, string> = {
 
 async function load() {
   loading.value = true
-  orders.value = await listOrders()
+  orders.value = await listAdminOrders()
   const all = await listGoods()
   goodsMap.value = Object.fromEntries(all.map((g) => [g.goodsId, g]))
   const ids = new Set<string>()

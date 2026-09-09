@@ -2,9 +2,9 @@
 import { ref, onMounted, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listGoods, updateGoodsStatus, updateGoods } from '@/api/goods'
+import { listCategories } from '@/api/admin'
 import { getUser } from '@/api/user'
-import { categoryGroups } from '@/constants/categories'
-import type { Goods, TradeType, QualityLevel } from '@/types'
+import type { Goods, TradeType, QualityLevel, Category } from '@/types'
 
 const goods = ref<Goods[]>([])
 const sellers = ref<Record<string, string>>({})
@@ -33,18 +33,14 @@ const qualityLevels: { value: QualityLevel; label: string }[] = [
   { value: 5, label: '6成新及以下' },
 ]
 
-const categoryOptions = categoryGroups.map((g) => ({
-  value: g.cateId,
-  label: g.cateName,
-  children: g.children.map((c) => ({ value: c.cateId, label: c.cateName })),
-}))
+const categories = ref<Category[]>([])
 
 // 编辑弹窗
 const editVisible = ref(false)
 const editForm = reactive({
   goodsId: '',
   title: '',
-  categoryPath: [] as string[],
+  cateId: '',
   sellPrice: 0,
   originalPrice: undefined as number | undefined,
   tradeType: 2 as TradeType,
@@ -92,17 +88,16 @@ function openEdit(g: Goods) {
   editForm.tradeType = g.tradeType
   editForm.qualityLevel = g.qualityLevel ?? 1
   editForm.goodsDesc = g.goodsDesc
-  const parent = categoryGroups.find((x) => x.children.some((c) => c.cateId === g.cateId))
-  editForm.categoryPath = parent ? [parent.cateId, g.cateId] : []
+  editForm.cateId = g.cateId
   editVisible.value = true
 }
 
 async function saveEdit() {
-  if (!editForm.title.trim() || !editForm.categoryPath.length || editForm.sellPrice <= 0) {
+  if (!editForm.title.trim() || !editForm.cateId || editForm.sellPrice <= 0) {
     ElMessage.warning('请填写完整信息')
     return
   }
-  const cateId = editForm.categoryPath[editForm.categoryPath.length - 1] ?? ''
+  const cateId = editForm.cateId
   await updateGoods(editForm.goodsId, {
     title: editForm.title.trim(),
     goodsDesc: editForm.goodsDesc,
@@ -117,7 +112,10 @@ async function saveEdit() {
   load()
 }
 
-onMounted(load)
+onMounted(async () => {
+  categories.value = await listCategories()
+  load()
+})
 </script>
 
 <template>
@@ -162,12 +160,9 @@ onMounted(load)
           <el-input v-model="editForm.title" maxlength="100" show-word-limit />
         </el-form-item>
         <el-form-item label="商品分类">
-          <el-cascader
-            v-model="editForm.categoryPath"
-            :options="categoryOptions"
-            :props="{ expandTrigger: 'hover' }"
-            style="width: 100%"
-          />
+          <el-select v-model="editForm.cateId" style="width: 100%">
+            <el-option v-for="c in categories" :key="c.cateId" :label="c.cateName" :value="c.cateId" />
+          </el-select>
         </el-form-item>
         <el-form-item label="成色">
           <el-select v-model="editForm.qualityLevel" style="width: 100%">

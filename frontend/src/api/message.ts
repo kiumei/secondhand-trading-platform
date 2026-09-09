@@ -1,44 +1,59 @@
-import { getDB, persist, nextId, delay } from './mock/db'
+import http from './http'
 import type { Message } from '@/types'
 
-export function listMessages(userId: string): Promise<Message[]> {
-  const list = getDB().messages.filter(
-    (m) => m.sendUserId === userId || m.receiveUserId === userId,
-  )
-  list.sort((a, b) => a.sendTime.localeCompare(b.sendTime))
-  return delay(list)
+interface ApiMessage {
+  msgId: string
+  sendUserId: string
+  receiveUserId: string
+  content: string
+  isRead: number
+  sendTime: string
 }
 
-export function sendMessage(
+function isImageUrl(content: string): boolean {
+  return content.startsWith('/api/media/') || content.startsWith('http')
+}
+
+function toMessage(api: ApiMessage): Message {
+  const isImage = isImageUrl(api.content)
+  return {
+    msgId: api.msgId,
+    sendUserId: api.sendUserId,
+    receiveUserId: api.receiveUserId,
+    content: isImage ? '' : api.content,
+    image: isImage ? api.content : undefined,
+    isRead: api.isRead as 0 | 1,
+    sendTime: api.sendTime,
+  }
+}
+
+export async function listMessages(userId: string): Promise<Message[]> {
+  const data = (await http.get('/users/me/messages', { params: { page: 1, pageSize: 200 } })) as {
+    items: ApiMessage[]
+  }
+  return (data.items ?? []).map(toMessage)
+}
+
+export async function sendMessage(
   sendUserId: string,
   receiveUserId: string,
   content: string,
   image?: string,
 ): Promise<Message> {
-  const db = getDB()
-  const msg: Message = {
-    msgId: nextId('message'),
-    sendUserId,
+  const api = (await http.post('/messages', {
     receiveUserId,
-    content,
-    image,
-    isRead: 0,
-    sendTime: new Date().toLocaleString('zh-CN'),
-  }
-  db.messages.push(msg)
-  persist()
-  return delay(msg)
+    content: image ?? content,
+  })) as ApiMessage
+  return toMessage(api)
 }
 
-export function markConversationRead(userId: string, peerId: string): Promise<void> {
-  const db = getDB()
-  let changed = false
-  for (const m of db.messages) {
-    if (m.sendUserId === peerId && m.receiveUserId === userId && m.isRead === 0) {
-      m.isRead = 1
-      changed = true
+export async function markConversationRead(userId: string, peerId: string): Promise<void> {
+  const data = (await http.get('/messages', { params: { peerId, page: 1, pageSize: 50 } })) as {
+    items: ApiMessage[]
+  }
+  for (const m of data.items ?? []) {
+    if (m.receiveUserId === userId && m.isRead === 0) {
+      await http.patch(`/messages/${m.msgId}/read`)
     }
   }
-  if (changed) persist()
-  return delay(undefined)
 }

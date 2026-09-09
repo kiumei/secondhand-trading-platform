@@ -2,14 +2,16 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { listGoods } from '@/api/goods'
-import type { Goods } from '@/types'
+import { listCategories } from '@/api/admin'
+import type { Goods, Category } from '@/types'
 import GoodsGrid from '@/components/GoodsGrid.vue'
-import { categoryGroups, getSubIds } from '@/constants/categories'
+import { categoryStyle } from '@/constants/categories'
 
 const router = useRouter()
 const goods = ref<Goods[]>([])
 const allGoods = ref<Goods[]>([])
-const activeGroup = ref<string>('')
+const categories = ref<Category[]>([])
+const activeCate = ref<string>('')
 const loading = ref(false)
 
 // 排序
@@ -36,37 +38,33 @@ const sortedGoods = computed(() => {
   }
 })
 
-// 左侧导航：4 个实物父类
-const navGroups = computed(() => categoryGroups)
-
-const activeGroupName = computed(
-  () => categoryGroups.find((g) => g.cateId === activeGroup.value)?.cateName ?? '',
+const activeCateName = computed(
+  () => categories.value.find((c) => c.cateId === activeCate.value)?.cateName ?? '',
 )
 
-function featGoods(groupId: string): Goods[] {
-  const ids = getSubIds(groupId)
-  return allGoods.value.filter((g) => ids.includes(g.cateId)).slice(0, 3)
+function featGoods(cateId: string): Goods[] {
+  return allGoods.value.filter((g) => g.cateId === cateId).slice(0, 3)
 }
 
 async function loadAll() {
   loading.value = true
-  allGoods.value = await listGoods({ status: 1 }) // 上架
+  const [goodsList, catList] = await Promise.all([
+    listGoods({ status: 1 }), // 上架
+    listCategories(),
+  ])
+  allGoods.value = goodsList
+  categories.value = catList
   goods.value = allGoods.value
   loading.value = false
 }
 
-function switchGroup(id: string) {
-  activeGroup.value = id
-  if (id === '') {
-    goods.value = allGoods.value
-  } else {
-    const ids = getSubIds(id)
-    goods.value = allGoods.value.filter((g) => ids.includes(g.cateId))
-  }
+function switchCate(cateId: string) {
+  activeCate.value = cateId
+  goods.value = cateId === '' ? allGoods.value : allGoods.value.filter((g) => g.cateId === cateId)
 }
 
-function goGroupGoods(groupId: string) {
-  router.push({ name: 'search', query: { group: groupId } })
+function goCateGoods(cateId: string) {
+  router.push({ name: 'search', query: { category: cateId } })
 }
 
 function goAll() {
@@ -83,31 +81,31 @@ onMounted(loadAll)
       <aside class="side-nav">
         <div
           class="side-nav-item"
-          :class="{ active: activeGroup === '' }"
-          @click="switchGroup('')"
+          :class="{ active: activeCate === '' }"
+          @click="switchCate('')"
         >
           <el-icon :size="18"><Grid /></el-icon>
           <span>全部</span>
         </div>
         <div
-          v-for="g in navGroups"
-          :key="g.cateId"
+          v-for="(c, i) in categories"
+          :key="c.cateId"
           class="side-nav-item"
-          :class="{ active: activeGroup === g.cateId }"
-          @click="switchGroup(g.cateId)"
+          :class="{ active: activeCate === c.cateId }"
+          @click="switchCate(c.cateId)"
         >
-          <el-icon :size="18"><component :is="g.icon" /></el-icon>
-          <span>{{ g.cateName }}</span>
+          <el-icon :size="18"><component :is="categoryStyle(i).icon" /></el-icon>
+          <span>{{ c.cateName }}</span>
         </div>
       </aside>
 
       <!-- 中间内容区 -->
       <div class="content">
         <!-- 选中分类时：分类商品列表 -->
-        <template v-if="activeGroup !== ''">
+        <template v-if="activeCate !== ''">
           <div class="featured">
             <div class="featured-head">
-              <h2 class="featured-title">{{ activeGroupName }}</h2>
+              <h2 class="featured-title">{{ activeCateName }}</h2>
               <div class="featured-right">
                 <span class="featured-count">共 {{ goods.length }} 件</span>
                 <el-dropdown trigger="click" @command="(k: string) => sortBy = k as SortKey">
@@ -147,21 +145,20 @@ onMounted(loadAll)
             </div>
           </div>
 
-          <!-- 分类推荐卡片 2×2 -->
+          <!-- 分类推荐卡片 -->
           <div class="feat-grid">
             <div
-              v-for="f in navGroups"
+              v-for="(f, i) in categories"
               :key="f.cateId"
               class="feat-card"
-              :style="{ background: f.tint }"
-              @click="goGroupGoods(f.cateId)"
+              :style="{ background: categoryStyle(i).tint }"
+              @click="goCateGoods(f.cateId)"
             >
               <div class="feat-head">
-                <span class="feat-name" :style="{ color: f.color }">
-                  <el-icon :size="16" style="margin-right: 4px"><component :is="f.icon" /></el-icon>
+                <span class="feat-name" :style="{ color: categoryStyle(i).color }">
+                  <el-icon :size="16" style="margin-right: 4px"><component :is="categoryStyle(i).icon" /></el-icon>
                   {{ f.cateName }}
                 </span>
-                <span class="feat-sub">{{ f.children.map((c) => c.cateName).join(' · ') }}</span>
               </div>
               <div class="feat-thumbs">
                 <div v-for="g in featGoods(f.cateId)" :key="g.goodsId" class="feat-thumb">
@@ -313,10 +310,6 @@ onMounted(loadAll)
   font-size: var(--text-md);
   display: inline-flex;
   align-items: center;
-}
-.feat-sub {
-  font-size: var(--text-xs);
-  color: var(--text-sub);
 }
 .feat-thumbs {
   display: flex;

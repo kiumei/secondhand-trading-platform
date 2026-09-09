@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listMessages, sendMessage, markConversationRead } from '@/api/message'
+import { uploadImage } from '@/api/media'
 import { listUsers } from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import type { Message, User } from '@/types'
@@ -95,9 +96,11 @@ function onPickImage(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
-  compressImage(file).then(async (url) => {
-    if (!userStore.currentUser || activeUserId.value == null) return
-    await sendMessage(userStore.currentUser.userId, activeUserId.value, '', url)
+  const uid = userStore.currentUser?.userId
+  const peerId = activeUserId.value
+  if (!uid || peerId == null) return
+  uploadImage(file).then(async (url) => {
+    await sendMessage(uid, peerId, '', url)
     await load()
   })
   input.value = ''
