@@ -1,18 +1,18 @@
 import { getDB, persist, nextId, delay } from './mock/db'
 import type { Favorite } from '@/types'
 
-export function listFavorites(userId: number): Promise<Favorite[]> {
+export function listFavorites(userId: string): Promise<Favorite[]> {
   const list = getDB().favorites
     .filter((f) => f.userId === userId)
     .sort((a, b) => b.createTime.localeCompare(a.createTime))
   return delay(list)
 }
 
-export function isFavorite(userId: number, goodsId: number): Promise<boolean> {
+export function isFavorite(userId: string, goodsId: string): Promise<boolean> {
   return delay(getDB().favorites.some((f) => f.userId === userId && f.goodsId === goodsId))
 }
 
-export function addFavorite(userId: number, goodsId: number): Promise<void> {
+export function addFavorite(userId: string, goodsId: string): Promise<void> {
   const db = getDB()
   if (!db.favorites.some((f) => f.userId === userId && f.goodsId === goodsId)) {
     db.favorites.push({
@@ -26,7 +26,7 @@ export function addFavorite(userId: number, goodsId: number): Promise<void> {
   return delay(undefined)
 }
 
-export function removeFavorite(userId: number, goodsId: number): Promise<void> {
+export function removeFavorite(userId: string, goodsId: string): Promise<void> {
   const db = getDB()
   db.favorites = db.favorites.filter((f) => !(f.userId === userId && f.goodsId === goodsId))
   persist()

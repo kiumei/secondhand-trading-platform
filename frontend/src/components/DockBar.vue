@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useFavoriteStore } from '@/stores/favorite'
@@ -10,6 +10,9 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const favoriteStore = useFavoriteStore()
+
+// 当前高亮的 dock 项（route.name 与 item.key 一致）
+const activeKey = computed(() => String(route.name ?? ''))
 
 const msgCount = ref(0)
 const orderCount = ref(0)
@@ -71,7 +74,7 @@ const items = [
       v-for="it in items"
       :key="it.key"
       class="dock-item"
-      :class="{ accent: it.accent }"
+      :class="{ accent: it.accent, active: activeKey === it.key }"
       @click="it.fn ? it.fn() : go(it.key)"
     >
       <el-badge
@@ -111,12 +114,30 @@ const items = [
   padding: var(--space-2);
   border-radius: var(--radius-md);
   cursor: pointer;
+  user-select: none;
   color: var(--text-main);
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .dock-item:hover {
   color: var(--color-primary);
   background: var(--color-surface);
+  transform: scale(1.08);
+}
+.dock-item:active {
+  transform: scale(0.9);
+}
+.dock-item.active {
+  color: var(--color-primary);
+  background: var(--el-color-primary-light-9);
+}
+.dock-item.active .dock-label {
+  font-weight: 600;
+}
+.dock-item.active .el-icon {
+  animation: dock-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .dock-item.accent {
   background: var(--color-primary);
@@ -125,6 +146,17 @@ const items = [
 .dock-item.accent:hover {
   background: var(--color-primary-active);
   color: #fff;
+}
+@keyframes dock-bounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 .dock-label {
   font-size: var(--text-xs);

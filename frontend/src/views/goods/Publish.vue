@@ -24,14 +24,14 @@ const qualityLevels: { value: QualityLevel; label: string }[] = [
 
 // 级联选择：父类 + 子类
 const categoryOptions = categoryGroups.map((g) => ({
-  value: g.categoryId,
+  value: g.cateId,
   label: g.cateName,
-  children: g.children.map((c) => ({ value: c.categoryId, label: c.cateName })),
+  children: g.children.map((c) => ({ value: c.cateId, label: c.cateName })),
 }))
 
 const form = reactive({
   title: '',
-  categoryPath: [] as number[],
+  categoryPath: [] as string[],
   qualityLevel: 1 as QualityLevel,
   sellPrice: 0,
   originalPrice: undefined as number | undefined,
@@ -138,7 +138,7 @@ async function submit() {
   if (!userStore.currentUser) return
   submitting.value = true
   const images = [mainImage.value, ...extraImages.value]
-  const cateId = form.categoryPath[form.categoryPath.length - 1] ?? 0
+  const cateId = form.categoryPath[form.categoryPath.length - 1] ?? ''
   await createGoods({
     title: form.title.trim(),
     goodsDesc: editorHtml.value,

@@ -9,7 +9,7 @@ const loading = ref(false)
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
-const form = reactive({ categoryId: 0, cateName: '', parentId: 0 })
+const form = reactive({ cateId: '', cateName: '', parentId: 0 })
 
 const parentCategories = computed(() => categories.value.filter((c) => c.parentId === 0))
 
@@ -20,12 +20,12 @@ async function load() {
 }
 
 function parentName(id: number): string {
-  return parentCategories.value.find((c) => c.categoryId === id)?.cateName ?? '—'
+  return parentCategories.value.find((c) => c.cateId === String(id))?.cateName ?? '—'
 }
 
 function openAdd() {
   isEdit.value = false
-  form.categoryId = 0
+  form.cateId = ''
   form.cateName = ''
   form.parentId = 0
   dialogVisible.value = true
@@ -33,7 +33,7 @@ function openAdd() {
 
 function openEdit(c: Category) {
   isEdit.value = true
-  form.categoryId = c.categoryId
+  form.cateId = c.cateId
   form.cateName = c.cateName
   form.parentId = c.parentId
   dialogVisible.value = true
@@ -45,7 +45,7 @@ async function save() {
     return
   }
   if (isEdit.value) {
-    await updateCategory(form.categoryId, form.cateName.trim())
+    await updateCategory(form.cateId, form.cateName.trim())
   } else {
     await createCategory(form.cateName.trim(), form.parentId)
   }
@@ -56,7 +56,7 @@ async function save() {
 
 async function remove(c: Category) {
   await ElMessageBox.confirm(`确定删除分类「${c.cateName}」？`, '提示', { type: 'warning' })
-  await deleteCategory(c.categoryId)
+  await deleteCategory(c.cateId)
   ElMessage.success('已删除')
   load()
 }
@@ -70,7 +70,7 @@ onMounted(load)
       <el-button type="primary" @click="openAdd">新增分类</el-button>
     </div>
     <el-table v-loading="loading" :data="categories" style="width: 100%">
-      <el-table-column prop="categoryId" label="ID" width="80" />
+      <el-table-column prop="cateId" label="ID" width="80" />
       <el-table-column label="层级" width="90">
         <template #default="{ row }">
           <el-tag :type="row.parentId === 0 ? 'primary' : 'info'" size="small">
@@ -100,8 +100,8 @@ onMounted(load)
             <el-option :value="0" label="无（作为一级分类）" />
             <el-option
               v-for="p in parentCategories"
-              :key="p.categoryId"
-              :value="p.categoryId"
+              :key="p.cateId"
+              :value="p.cateId"
               :label="p.cateName"
             />
           </el-select>

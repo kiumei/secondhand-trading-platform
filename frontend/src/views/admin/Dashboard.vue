@@ -17,7 +17,7 @@ const stats = ref({
   sales: 0,
 })
 const pendingGoods = ref<Goods[]>([])
-const sellerNames = ref<Record<number, string>>({})
+const sellerNames = ref<Record<string, string>>({})
 
 onMounted(async () => {
   const [goods, orders, users, reports] = await Promise.all([

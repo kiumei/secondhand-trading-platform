@@ -9,7 +9,7 @@ import { categoryGroups, getSubIds } from '@/constants/categories'
 const router = useRouter()
 const goods = ref<Goods[]>([])
 const allGoods = ref<Goods[]>([])
-const activeGroup = ref<number>(0)
+const activeGroup = ref<string>('')
 const loading = ref(false)
 
 // 排序
@@ -40,10 +40,10 @@ const sortedGoods = computed(() => {
 const navGroups = computed(() => categoryGroups)
 
 const activeGroupName = computed(
-  () => categoryGroups.find((g) => g.categoryId === activeGroup.value)?.cateName ?? '',
+  () => categoryGroups.find((g) => g.cateId === activeGroup.value)?.cateName ?? '',
 )
 
-function featGoods(groupId: number): Goods[] {
+function featGoods(groupId: string): Goods[] {
   const ids = getSubIds(groupId)
   return allGoods.value.filter((g) => ids.includes(g.cateId)).slice(0, 3)
 }
@@ -55,9 +55,9 @@ async function loadAll() {
   loading.value = false
 }
 
-function switchGroup(id: number) {
+function switchGroup(id: string) {
   activeGroup.value = id
-  if (id === 0) {
+  if (id === '') {
     goods.value = allGoods.value
   } else {
     const ids = getSubIds(id)
@@ -65,8 +65,8 @@ function switchGroup(id: number) {
   }
 }
 
-function goGroupGoods(groupId: number) {
-  router.push({ name: 'search', query: { group: String(groupId) } })
+function goGroupGoods(groupId: string) {
+  router.push({ name: 'search', query: { group: groupId } })
 }
 
 function goAll() {
@@ -83,18 +83,18 @@ onMounted(loadAll)
       <aside class="side-nav">
         <div
           class="side-nav-item"
-          :class="{ active: activeGroup === 0 }"
-          @click="switchGroup(0)"
+          :class="{ active: activeGroup === '' }"
+          @click="switchGroup('')"
         >
           <el-icon :size="18"><Grid /></el-icon>
           <span>全部</span>
         </div>
         <div
           v-for="g in navGroups"
-          :key="g.categoryId"
+          :key="g.cateId"
           class="side-nav-item"
-          :class="{ active: activeGroup === g.categoryId }"
-          @click="switchGroup(g.categoryId)"
+          :class="{ active: activeGroup === g.cateId }"
+          @click="switchGroup(g.cateId)"
         >
           <el-icon :size="18"><component :is="g.icon" /></el-icon>
           <span>{{ g.cateName }}</span>
@@ -104,7 +104,7 @@ onMounted(loadAll)
       <!-- 中间内容区 -->
       <div class="content">
         <!-- 选中分类时：分类商品列表 -->
-        <template v-if="activeGroup !== 0">
+        <template v-if="activeGroup !== ''">
           <div class="featured">
             <div class="featured-head">
               <h2 class="featured-title">{{ activeGroupName }}</h2>
@@ -151,10 +151,10 @@ onMounted(loadAll)
           <div class="feat-grid">
             <div
               v-for="f in navGroups"
-              :key="f.categoryId"
+              :key="f.cateId"
               class="feat-card"
               :style="{ background: f.tint }"
-              @click="goGroupGoods(f.categoryId)"
+              @click="goGroupGoods(f.cateId)"
             >
               <div class="feat-head">
                 <span class="feat-name" :style="{ color: f.color }">
@@ -164,11 +164,11 @@ onMounted(loadAll)
                 <span class="feat-sub">{{ f.children.map((c) => c.cateName).join(' · ') }}</span>
               </div>
               <div class="feat-thumbs">
-                <div v-for="g in featGoods(f.categoryId)" :key="g.goodsId" class="feat-thumb">
+                <div v-for="g in featGoods(f.cateId)" :key="g.goodsId" class="feat-thumb">
                   <img :src="g.images[0]" :alt="g.title" />
                   <span class="feat-price">¥{{ g.sellPrice }}</span>
                 </div>
-                <el-empty v-if="!featGoods(f.categoryId).length" description="暂无" :image-size="40" />
+                <el-empty v-if="!featGoods(f.cateId).length" description="暂无" :image-size="40" />
               </div>
             </div>
           </div>
@@ -266,9 +266,7 @@ onMounted(loadAll)
 .banner {
   height: 220px;
   border-radius: var(--radius-md);
-  background:
-    linear-gradient(135deg, rgba(7, 193, 96, 0.15), rgba(7, 193, 96, 0.45)),
-    url('https://picsum.photos/seed/banner/1200/220') center/cover no-repeat;
+  background: linear-gradient(135deg, rgba(7, 193, 96, 0.15), rgba(7, 193, 96, 0.45));
   display: flex;
   align-items: center;
   padding: var(--space-6);

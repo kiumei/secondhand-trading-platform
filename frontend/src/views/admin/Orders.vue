@@ -6,8 +6,8 @@ import { getUser } from '@/api/user'
 import type { Order, Goods } from '@/types'
 
 const orders = ref<Order[]>([])
-const goodsMap = ref<Record<number, Goods>>({})
-const userNames = ref<Record<number, string>>({})
+const goodsMap = ref<Record<string, Goods>>({})
+const userNames = ref<Record<string, string>>({})
 const loading = ref(false)
 
 const statusText: Record<number, string> = {
@@ -24,7 +24,7 @@ async function load() {
   orders.value = await listOrders()
   const all = await listGoods()
   goodsMap.value = Object.fromEntries(all.map((g) => [g.goodsId, g]))
-  const ids = new Set<number>()
+  const ids = new Set<string>()
   orders.value.forEach((o) => {
     ids.add(o.buyerId)
     ids.add(o.sellerId)

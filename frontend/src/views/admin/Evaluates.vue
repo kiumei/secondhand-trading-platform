@@ -7,8 +7,8 @@ import { getUser } from '@/api/user'
 import type { Evaluate, Goods } from '@/types'
 
 const evaluates = ref<Evaluate[]>([])
-const goodsMap = ref<Record<number, Goods>>({})
-const userNames = ref<Record<number, string>>({})
+const goodsMap = ref<Record<string, Goods>>({})
+const userNames = ref<Record<string, string>>({})
 const loading = ref(false)
 
 async function load() {

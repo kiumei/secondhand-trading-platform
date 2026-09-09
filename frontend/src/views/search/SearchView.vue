@@ -10,28 +10,28 @@ const route = useRoute()
 const router = useRouter()
 
 const keyword = ref((route.query.q as string) || '')
-const categoryPath = ref<number[]>([])
+const categoryPath = ref<string[]>([])
 const minPrice = ref<number>()
 const maxPrice = ref<number>()
 const goods = ref<Goods[]>([])
 const loading = ref(false)
 
 const categoryOptions = categoryGroups.map((g) => ({
-  value: g.categoryId,
+  value: g.cateId,
   label: g.cateName,
-  children: g.children.map((c) => ({ value: c.categoryId, label: c.cateName })),
+  children: g.children.map((c) => ({ value: c.cateId, label: c.cateName })),
 }))
 
 // 从 query 初始化分类：支持 group=父类id 或 category=子类id
-const groupParam = Number(route.query.group) || 0
-const categoryParam = Number(route.query.category) || 0
+const groupParam = (route.query.group as string) || ''
+const categoryParam = (route.query.category as string) || ''
 if (groupParam) {
-  const g = categoryGroups.find((x) => x.categoryId === groupParam)
-  if (g) categoryPath.value = [g.categoryId]
+  const g = categoryGroups.find((x) => x.cateId === groupParam)
+  if (g) categoryPath.value = [g.cateId]
 }
 if (categoryParam) {
-  const g = categoryGroups.find((x) => x.children.some((c) => c.categoryId === categoryParam))
-  if (g) categoryPath.value = [g.categoryId, categoryParam]
+  const g = categoryGroups.find((x) => x.children.some((c) => c.cateId === categoryParam))
+  if (g) categoryPath.value = [g.cateId, categoryParam]
 }
 
 async function load() {

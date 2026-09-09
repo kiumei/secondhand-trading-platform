@@ -1,7 +1,7 @@
 import { getDB, persist, nextId, delay } from './mock/db'
 import type { Message } from '@/types'
 
-export function listMessages(userId: number): Promise<Message[]> {
+export function listMessages(userId: string): Promise<Message[]> {
   const list = getDB().messages.filter(
     (m) => m.sendUserId === userId || m.receiveUserId === userId,
   )
@@ -10,8 +10,8 @@ export function listMessages(userId: number): Promise<Message[]> {
 }
 
 export function sendMessage(
-  sendUserId: number,
-  receiveUserId: number,
+  sendUserId: string,
+  receiveUserId: string,
   content: string,
   image?: string,
 ): Promise<Message> {
@@ -30,7 +30,7 @@ export function sendMessage(
   return delay(msg)
 }
 
-export function markConversationRead(userId: number, peerId: number): Promise<void> {
+export function markConversationRead(userId: string, peerId: string): Promise<void> {
   const db = getDB()
   let changed = false
   for (const m of db.messages) {

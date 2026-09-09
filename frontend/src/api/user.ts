@@ -18,7 +18,11 @@ export function register(input: {
   const user: User = {
     userId: nextId('user'),
     ...input,
-    avatar: `https://picsum.photos/seed/avatar${input.phone}/200/200`,
+    avatar:
+      'data:image/svg+xml;charset=utf-8,' +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#d0d0d0"/></svg>',
+      ),
     intro: '',
     role: 0,
     status: 0,
@@ -30,7 +34,7 @@ export function register(input: {
 }
 
 export function updateProfile(
-  id: number,
+  id: string,
   patch: Partial<Pick<User, 'userName' | 'avatar' | 'intro' | 'address'>>,
 ): Promise<void> {
   const db = getDB()
@@ -43,7 +47,7 @@ export function updateProfile(
 }
 
 export function updatePassword(
-  id: number,
+  id: string,
   oldPassword: string,
   newPassword: string,
 ): Promise<boolean> {
@@ -55,7 +59,7 @@ export function updatePassword(
   return delay(true)
 }
 
-export function getUser(id: number): Promise<User | undefined> {
+export function getUser(id: string): Promise<User | undefined> {
   return delay(getDB().users.find((x) => x.userId === id))
 }
 
@@ -63,14 +67,14 @@ export function listUsers(): Promise<User[]> {
   return delay(getDB().users.slice())
 }
 
-export function deleteUser(id: number): Promise<void> {
+export function deleteUser(id: string): Promise<void> {
   const db = getDB()
   db.users = db.users.filter((x) => x.userId !== id)
   persist()
   return delay(undefined)
 }
 
-export function setUserStatus(id: number, status: 0 | 1): Promise<void> {
+export function setUserStatus(id: string, status: 0 | 1): Promise<void> {
   const db = getDB()
   const u = db.users.find((x) => x.userId === id)
   if (u) {
@@ -89,7 +93,7 @@ export function setUserStatus(id: number, status: 0 | 1): Promise<void> {
   return delay(undefined)
 }
 
-export function resetPassword(id: number, newPassword: string): Promise<void> {
+export function resetPassword(id: string, newPassword: string): Promise<void> {
   const db = getDB()
   const u = db.users.find((x) => x.userId === id)
   if (u) {

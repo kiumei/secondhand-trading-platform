@@ -97,6 +97,32 @@ html.dark {
   --color-primary: #07c160;
 }
 
+/* wangEditor 富文本编辑器暗色适配 */
+html.dark .w-e-toolbar {
+  background-color: var(--color-surface);
+  border-color: var(--color-hairline);
+}
+html.dark .w-e-toolbar .w-e-bar-item button {
+  color: var(--color-muted);
+}
+html.dark .w-e-toolbar .w-e-bar-item button:hover,
+html.dark .w-e-toolbar .w-e-bar-item button.active {
+  background-color: var(--color-surface-strong);
+  color: var(--color-ink);
+}
+html.dark .w-e-toolbar .w-e-bar-divider {
+  background-color: var(--color-hairline);
+}
+html.dark .w-e-text-container {
+  background-color: var(--color-canvas) !important;
+}
+html.dark .w-e-text-container .w-e-text {
+  color: var(--color-ink) !important;
+}
+html.dark .w-e-text-placeholder {
+  color: var(--color-muted-soft) !important;
+}
+
 /* ============================================================
    Base
    ============================================================ */
@@ -123,6 +149,29 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 滚动条：预留空间避免布局抖动，并主题化 */
+html {
+  scrollbar-gutter: stable;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted-soft);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-muted-soft) transparent;
 }
 
 #app {

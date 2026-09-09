@@ -6,7 +6,7 @@ import { listGoods } from '@/api/goods'
 import type { Report, Goods } from '@/types'
 
 const reports = ref<Report[]>([])
-const goodsMap = ref<Record<number, Goods>>({})
+const goodsMap = ref<Record<string, Goods>>({})
 const loading = ref(false)
 
 async function load() {

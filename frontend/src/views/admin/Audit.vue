@@ -7,7 +7,7 @@ import { categoryGroups } from '@/constants/categories'
 import type { Goods, TradeType, QualityLevel } from '@/types'
 
 const goods = ref<Goods[]>([])
-const sellers = ref<Record<number, string>>({})
+const sellers = ref<Record<string, string>>({})
 const loading = ref(false)
 
 const statusText: Record<number, string> = {
@@ -34,17 +34,17 @@ const qualityLevels: { value: QualityLevel; label: string }[] = [
 ]
 
 const categoryOptions = categoryGroups.map((g) => ({
-  value: g.categoryId,
+  value: g.cateId,
   label: g.cateName,
-  children: g.children.map((c) => ({ value: c.categoryId, label: c.cateName })),
+  children: g.children.map((c) => ({ value: c.cateId, label: c.cateName })),
 }))
 
 // 编辑弹窗
 const editVisible = ref(false)
 const editForm = reactive({
-  goodsId: 0,
+  goodsId: '',
   title: '',
-  categoryPath: [] as number[],
+  categoryPath: [] as string[],
   sellPrice: 0,
   originalPrice: undefined as number | undefined,
   tradeType: 2 as TradeType,
@@ -92,8 +92,8 @@ function openEdit(g: Goods) {
   editForm.tradeType = g.tradeType
   editForm.qualityLevel = g.qualityLevel ?? 1
   editForm.goodsDesc = g.goodsDesc
-  const parent = categoryGroups.find((x) => x.children.some((c) => c.categoryId === g.cateId))
-  editForm.categoryPath = parent ? [parent.categoryId, g.cateId] : []
+  const parent = categoryGroups.find((x) => x.children.some((c) => c.cateId === g.cateId))
+  editForm.categoryPath = parent ? [parent.cateId, g.cateId] : []
   editVisible.value = true
 }
 
@@ -102,7 +102,7 @@ async function saveEdit() {
     ElMessage.warning('请填写完整信息')
     return
   }
-  const cateId = editForm.categoryPath[editForm.categoryPath.length - 1] ?? 0
+  const cateId = editForm.categoryPath[editForm.categoryPath.length - 1] ?? ''
   await updateGoods(editForm.goodsId, {
     title: editForm.title.trim(),
     goodsDesc: editForm.goodsDesc,

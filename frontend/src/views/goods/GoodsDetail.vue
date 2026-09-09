@@ -23,7 +23,7 @@ const activeImg = ref(0)
 const buyDialogVisible = ref(false)
 const buyAddress = ref('')
 
-const goodsId = computed(() => Number(route.params.id))
+const goodsId = computed(() => String(route.params.id))
 const isSeller = computed(() => goods.value?.publishUserId === userStore.currentUser?.userId)
 const faved = computed(() => favoriteStore.isFavorite(goodsId.value))
 
@@ -104,7 +104,7 @@ async function onReport() {
   await createReport({
     goodsId: goods.value.goodsId,
     reportUserId: userStore.currentUser!.userId,
-    reportType: '违规商品',
+    reportType: 1,
     reportContent: value,
   })
   ElMessage.success('举报已提交')
@@ -364,7 +364,7 @@ onMounted(() => {
   flex-shrink: 0;
 }
 .reject {
-  color: #f56c6c;
+  color: var(--color-danger);
 }
 .seller-box {
   display: flex;

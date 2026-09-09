@@ -11,13 +11,13 @@ const router = useRouter()
 const userStore = useUserStore()
 const messages = ref<Message[]>([])
 const users = ref<User[]>([])
-const activeUserId = ref<number | null>(null)
+const activeUserId = ref<string | null>(null)
 const draft = ref('')
 
 const activeUser = computed(() => users.value.find((u) => u.userId === activeUserId.value))
 
 const conversations = computed(() => {
-  const map = new Map<number, Message[]>()
+  const map = new Map<string, Message[]>()
   for (const m of messages.value) {
     const other =
       m.sendUserId === userStore.currentUser?.userId ? m.receiveUserId : m.sendUserId
@@ -44,7 +44,7 @@ async function load() {
   if (!userStore.currentUser) return
   messages.value = await listMessages(userStore.currentUser.userId)
   users.value = await listUsers()
-  const to = Number(route.query.to)
+  const to = (route.query.to as string) || ''
   if (to && users.value.some((u) => u.userId === to)) {
     activeUserId.value = to
     await markConversationRead(userStore.currentUser.userId, to)
@@ -103,14 +103,14 @@ function onPickImage(e: Event) {
   input.value = ''
 }
 
-async function selectUser(id: number) {
+async function selectUser(id: string) {
   activeUserId.value = id
   if (userStore.currentUser) {
     await markConversationRead(userStore.currentUser.userId, id)
   }
 }
 
-function goProfile(id: number) {
+function goProfile(id: string) {
   router.push({ name: 'user-profile', params: { id } })
 }
 

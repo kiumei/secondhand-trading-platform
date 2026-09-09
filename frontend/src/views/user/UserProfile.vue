@@ -17,7 +17,7 @@ const goods = ref<Goods[]>([])
 const evaluates = ref<Evaluate[]>([])
 const loading = ref(false)
 
-const userId = computed(() => Number(route.params.id))
+const userId = computed(() => String(route.params.id))
 const isSelf = computed(() => userStore.currentUser?.userId === userId.value)
 const avgScore = computed(() => {
   if (!evaluates.value.length) return 0

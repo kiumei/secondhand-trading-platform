@@ -22,8 +22,12 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
-// 初始化登录态和主题
-useUserStore().loadFromStorage()
+// 初始化主题
 useThemeStore().applyTheme()
 
-app.mount('#app')
+// 先恢复会话（Cookie Session），再挂载应用
+async function bootstrap() {
+  await useUserStore().restoreSession()
+  app.mount('#app')
+}
+bootstrap()

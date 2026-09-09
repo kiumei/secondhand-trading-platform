@@ -3,14 +3,14 @@ import type { Goods, GoodsStatus, TradeType, QualityLevel } from '@/types'
 
 export interface GoodsQuery {
   keyword?: string
-  categoryId?: number
+  cateId?: string
   minPrice?: number
   maxPrice?: number
   status?: GoodsStatus
-  sellerId?: number
+  sellerId?: string
 }
 
-function isPurchasable(goodsId: number): boolean {
+function isPurchasable(goodsId: string): boolean {
   const db = getDB()
   const g = db.goods.find((x) => x.goodsId === goodsId)
   if (!g || g.goodsStatus !== 1) return false
@@ -25,7 +25,7 @@ export function listGoods(query: GoodsQuery = {}): Promise<Goods[]> {
       (g) => g.title.toLowerCase().includes(kw) || g.goodsDesc.toLowerCase().includes(kw),
     )
   }
-  if (query.categoryId) list = list.filter((g) => g.cateId === query.categoryId)
+  if (query.cateId) list = list.filter((g) => g.cateId === query.cateId)
   if (query.minPrice != null) list = list.filter((g) => g.sellPrice >= query.minPrice!)
   if (query.maxPrice != null) list = list.filter((g) => g.sellPrice <= query.maxPrice!)
   if (query.status != null) list = list.filter((g) => g.goodsStatus === query.status)
@@ -34,7 +34,7 @@ export function listGoods(query: GoodsQuery = {}): Promise<Goods[]> {
   return delay(list.map((g) => ({ ...g, purchasable: isPurchasable(g.goodsId) })))
 }
 
-export function getGoods(id: number): Promise<Goods | undefined> {
+export function getGoods(id: string): Promise<Goods | undefined> {
   const g = getDB().goods.find((x) => x.goodsId === id)
   if (g) {
     g.views += 1
@@ -49,11 +49,11 @@ export interface GoodsInput {
   goodsDesc: string
   sellPrice: number
   originalPrice?: number
-  cateId: number
+  cateId: string
   tradeType: TradeType
   qualityLevel?: QualityLevel
   images: string[]
-  publishUserId: number
+  publishUserId: string
 }
 
 export function createGoods(input: GoodsInput): Promise<Goods> {
@@ -63,7 +63,7 @@ export function createGoods(input: GoodsInput): Promise<Goods> {
     goodsId: nextId('goods'),
     ...input,
     sellerName: seller?.userName ?? '匿名用户',
-    cateName: db.categories.find((c) => c.categoryId === input.cateId)?.cateName,
+    cateName: db.categories.find((c) => c.cateId === input.cateId)?.cateName,
     goodsStatus: 0, // 待审核
     publishTime: new Date().toLocaleString('zh-CN'),
     views: 0,
@@ -75,14 +75,14 @@ export function createGoods(input: GoodsInput): Promise<Goods> {
 }
 
 export function updateGoods(
-  id: number,
+  id: string,
   input: Omit<GoodsInput, 'images' | 'publishUserId'>,
 ): Promise<Goods | undefined> {
   const db = getDB()
   const g = db.goods.find((x) => x.goodsId === id)
   if (g) {
     Object.assign(g, input)
-    g.cateName = db.categories.find((c) => c.categoryId === input.cateId)?.cateName
+    g.cateName = db.categories.find((c) => c.cateId === input.cateId)?.cateName
     g.goodsStatus = 0 // 修改后重新进入待审核
     g.rejectReason = undefined
     g.purchasable = false
@@ -92,7 +92,7 @@ export function updateGoods(
 }
 
 export function updateGoodsStatus(
-  id: number,
+  id: string,
   status: GoodsStatus,
   rejectReason?: string,
 ): Promise<void> {
@@ -107,7 +107,7 @@ export function updateGoodsStatus(
   return delay(undefined)
 }
 
-export function deleteGoods(id: number): Promise<void> {
+export function deleteGoods(id: string): Promise<void> {
   const db = getDB()
   db.goods = db.goods.filter((x) => x.goodsId !== id)
   persist()

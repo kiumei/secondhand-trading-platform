@@ -7,16 +7,16 @@ export function listCategories(): Promise<Category[]> {
 
 export function createCategory(cateName: string, parentId = 0): Promise<Category> {
   const db = getDB()
-  const categoryId = db.categories.reduce((m, c) => Math.max(m, c.categoryId), 0) + 1
-  const c: Category = { categoryId, cateName, parentId }
+  const cateId = String(db.categories.reduce((m, c) => Math.max(m, Number(c.cateId)), 0) + 1)
+  const c: Category = { cateId, cateName, parentId }
   db.categories.push(c)
   persist()
   return delay(c)
 }
 
-export function updateCategory(id: number, cateName: string): Promise<void> {
+export function updateCategory(id: string, cateName: string): Promise<void> {
   const db = getDB()
-  const c = db.categories.find((x) => x.categoryId === id)
+  const c = db.categories.find((x) => x.cateId === id)
   if (c) {
     c.cateName = cateName
     persist()
@@ -24,9 +24,9 @@ export function updateCategory(id: number, cateName: string): Promise<void> {
   return delay(undefined)
 }
 
-export function deleteCategory(id: number): Promise<void> {
+export function deleteCategory(id: string): Promise<void> {
   const db = getDB()
-  db.categories = db.categories.filter((c) => c.categoryId !== id)
+  db.categories = db.categories.filter((c) => c.cateId !== id)
   persist()
   return delay(undefined)
 }

@@ -13,9 +13,9 @@ const router = useRouter()
 const userStore = useUserStore()
 const activeTab = ref<'buy' | 'sell'>('buy')
 const orders = ref<Order[]>([])
-const goodsMap = ref<Record<number, Goods>>({})
+const goodsMap = ref<Record<string, Goods>>({})
 const loading = ref(false)
-const counterpartyNames = ref<Record<number, string>>({})
+const counterpartyNames = ref<Record<string, string>>({})
 
 const detailVisible = ref(false)
 const detailOrder = ref<Order | null>(null)
@@ -50,7 +50,7 @@ async function load() {
   )
   const all = await listGoods()
   goodsMap.value = Object.fromEntries(all.map((g) => [g.goodsId, g]))
-  const ids = new Set<number>()
+  const ids = new Set<string>()
   orders.value.forEach((o) => ids.add(activeTab.value === 'buy' ? o.sellerId : o.buyerId))
   for (const id of ids) {
     const u = await getUser(id)
@@ -130,7 +130,7 @@ async function cancel(order: Order) {
   load()
 }
 
-function goUser(id: number) {
+function goUser(id: string) {
   router.push({ name: 'user-profile', params: { id } })
 }
 

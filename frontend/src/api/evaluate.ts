@@ -1,7 +1,7 @@
 import { getDB, persist, nextId, delay } from './mock/db'
 import type { Evaluate } from '@/types'
 
-export function listEvaluates(goodsId?: number): Promise<Evaluate[]> {
+export function listEvaluates(goodsId?: string): Promise<Evaluate[]> {
   let list = getDB().evaluates.slice()
   if (goodsId != null) list = list.filter((e) => e.goodsId === goodsId)
   list.sort((a, b) => b.evaluateTime.localeCompare(a.evaluateTime))
@@ -9,9 +9,9 @@ export function listEvaluates(goodsId?: number): Promise<Evaluate[]> {
 }
 
 export function createEvaluate(input: {
-  orderId: number
-  goodsId: number
-  evaluateUserId: number
+  orderId: string
+  goodsId: string
+  evaluateUserId: string
   score: 1 | 2 | 3 | 4 | 5
   evaluateContent: string
 }): Promise<Evaluate | null> {
@@ -28,7 +28,7 @@ export function createEvaluate(input: {
   return delay(ev)
 }
 
-export function deleteEvaluate(id: number): Promise<void> {
+export function deleteEvaluate(id: string): Promise<void> {
   const db = getDB()
   db.evaluates = db.evaluates.filter((e) => e.evaluateId !== id)
   persist()
