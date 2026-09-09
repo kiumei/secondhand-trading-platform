@@ -54,7 +54,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/health", "/api/auth/csrf").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories", "/api/media/*", "/api/public/users/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/goods", "/api/goods/*", "/api/goods/*/evaluations").permitAll()
-                        // 用户收到的评价公开可读（个人主页）；/api/users/me/evaluations 仍需登录。
+                        // 本人评价必须先匹配认证规则，避免被下面的公开通配路径放行。
+                        .requestMatchers(HttpMethod.GET, "/api/users/me/evaluations").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/users/*/evaluations").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

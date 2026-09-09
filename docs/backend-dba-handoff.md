@@ -20,18 +20,18 @@
 
 | 约定项 | 建议做法 |
 | --- | --- |
-| 主键 | 沿用 Word 的 VARCHAR(32)，后端生成无连字符 UUID；引用字段使用相同类型和字符规则 |
+| 主键 | 以当前 SQL 为准：普通表主键采用 INT AUTO_INCREMENT；orders.order_id 为 VARCHAR(32)，由后端生成无连字符 UUID；外键类型与被引用主键一致 |
 | 金额 | 沿用 DECIMAL(10,2)，Java 使用 BigDecimal |
 | 时间 | 沿用 DATETIME；建议开发库和后端统一按 Asia/Shanghai 解释，API 输出明确时区 |
 | 角色 | 沿用 0 学生、1 管理员；注册接口不能创建管理员 |
-| 商品状态 | 沿用 Word：0 未售出、1 已售出、2 下架、3 待审核、4 驳回 |
+| 商品状态 | 以当前 SQL 为准：0 待审核、1 上架、2 下架、3 已售出、4 驳回 |
 | 登录标识 | 建议手机号登录并建立唯一约束，昵称允许重复 |
-| 评价关联 | 保留 Word 中 order_id、goods_id、evaluate_user_id，由后端根据订单填充并检查一致性 |
+| 评价关联 | evaluate 保存 order_id，商品和评价人通过 orders 联查，由后端校验订单与买家归属 |
 | 订单状态 | 沿用 PDM：0待付款、1待发货、2待收货、3完成、4取消、5售后；第一版不开放售后操作 |
 
 订单支付和完成同步当前表的 pay_status、pay_time、finish_time。图片上传和 goods_image 关联保存已实现，最多4张，按 sort_order、img_id 排序。后端没有创建表。
 
-sys_user.role 为0普通用户、1管理员；status 为0正常、1封禁。后端登录和会话检查执行封禁限制。address 已接入个人资料读写，最长255字符，未扩展订单地址快照。
+sys_user.role 为0普通用户、1管理员；status 为0正常、1封禁。后端登录和会话检查执行封禁限制。address 已接入个人资料读写，最长255字符，订单 shipping_address 已保存下单地址快照。
 
 report 已读写 goods_id；report_type 限定1至5，依次为假冒伪劣、欺诈行为、辱骂骚扰、违规违禁品、其他；handle_status 为0待处理、1已处理。
 

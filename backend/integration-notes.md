@@ -33,7 +33,7 @@
 | 登录和刷新 | 手机号登录；GET /api/users/me 恢复真实会话，不把 localStorage 的角色作为登录依据 |
 | 注册 | phone、password、userName；注册后需再调用登录；nickname 对应 userName，username 不是独立登录字段 |
 | 分页 | data.items、total、page、pageSize；默认 10、最多 50，需要多页时由前端继续请求 |
-| 商品 | price/desc/categoryId 对应 sellPrice/goodsDesc/categoryId；金额返回十进制字符串 |
+| 商品 | price/desc/categoryId 对应 sellPrice/goodsDesc/cateId；金额返回十进制字符串 |
 | 商品状态 | pending/on/off/sold/rejected 分别映射 0/1/2/3/4；待审查询显式传 status=0 |
 | 商品查询 | GET /api/goods 支持 sellerId、关键词、分类和价格；管理员 GET /api/admin/goods 不传 status 查全部 |
 | 订单 | ID 是字符串，不要 Number(orderId)；卖家/买家/价格由后端确定 |
@@ -44,7 +44,7 @@
 | 消息收录 | GET /api/users/me/messages 返回本人全部私信分页；GET /api/messages?peerId=... 查双方会话 |
 | 修改密码 | PUT /api/users/me/password，oldPassword/newPassword；需登录和 CSRF |
 
-收藏、商品多图及两级分类已有实现；功能扩展按同学分工处理。求购、公告和站点配置按确认文档不新增。现有订单不保存物流单号或收货地址快照。
+收藏、商品多图及两级分类已有实现；功能扩展按同学分工处理。求购、公告和站点配置按确认文档不新增。订单已保存收货地址快照，仍不保存物流单号。
 
 ## 验证与交付
 

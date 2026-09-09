@@ -14,7 +14,7 @@ public class OrderController {
     public OrderController(OrderService orders) { this.orders = orders; }
     @PostMapping("/api/orders")
     public ApiResponse<Order> create(Authentication auth, @Valid @RequestBody OrderInput input) {
-        return ApiResponse.success(orders.create(CurrentUser.id(auth), input.goodsId()));
+        return ApiResponse.success(orders.create(CurrentUser.id(auth), input.goodsId(), input.shippingAddress()));
     }
     @GetMapping("/api/orders")
     public ApiResponse<PageResult<Order>> list(Authentication auth, @RequestParam(defaultValue = "buy") String side,

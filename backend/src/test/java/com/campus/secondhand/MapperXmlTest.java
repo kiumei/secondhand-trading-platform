@@ -23,6 +23,18 @@ class MapperXmlTest {
                 .getBoundSql(Map.of("userId", "2", "offset", 0, "size", 10));
         assertThat(inbox.getParameterMappings()).extracting(org.apache.ibatis.mapping.ParameterMapping::getProperty)
                 .containsExactly("userId", "userId", "size", "offset");
+        var orderRow = new com.campus.secondhand.market.MarketModels.Order("o", "b", "s", "g", java.math.BigDecimal.ONE,
+                0, 0, null, null, null, "校区1栋");
+        var orderInsert = configuration.getMappedStatement("com.campus.secondhand.market.MarketMapper.insertOrder").getBoundSql(orderRow);
+        assertThat(orderInsert.getSql()).contains("shipping_address");
+        assertThat(orderInsert.getParameterMappings()).extracting(org.apache.ibatis.mapping.ParameterMapping::getProperty).contains("shippingAddress");
+        for (String name : new String[]{"order", "lockOrder", "orders", "adminOrders"}) {
+            var params = new java.util.HashMap<String,Object>();
+            params.put("id", "o"); params.put("userId", "b"); params.put("side", "buy"); params.put("status", null);
+            params.put("offset", 0); params.put("size", 10);
+            assertThat(configuration.getMappedStatement("com.campus.secondhand.market.MarketMapper." + name)
+                    .getBoundSql(params).getSql()).contains("shipping_address");
+        }
         var bound = configuration.getMappedStatement("com.campus.secondhand.user.UserMapper.findByPhone")
                 .getBoundSql(Map.of("phone", "' OR 1=1 --"));
         assertThat(bound.getSql()).contains("phone = ?").doesNotContain("OR 1=1");

@@ -191,6 +191,18 @@ class MarketApiTest {
                 .andExpect(status().isForbidden());
         verify(db, never()).readMessage(any(), any()); verify(db, never()).handleReport(any(), any());
     }
+    @Test void orderAddressIsAcceptedButCannotExposeAnotherBuyersOrder() throws Exception {
+        var session = session("buyer", "STUDENT");
+        when(db.insertOrder(any())).thenReturn(1);
+        mvc.perform(write(post("/api/orders"), session, "{\"goodsId\":\"g\",\"shippingAddress\":\"校区1栋\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.shippingAddress").value("校区1栋"));
+        mvc.perform(write(post("/api/orders"), session, json.writeValueAsString(java.util.Map.of("goodsId", "g", "shippingAddress", "x".repeat(256)))))
+                .andExpect(status().isBadRequest());
+        when(db.order("o")).thenReturn(MarketServiceTest.order(0));
+        mvc.perform(get("/api/orders/o").session(session("stranger", "STUDENT"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/users/me/evaluations")).andExpect(status().isUnauthorized());
+    }
+
     @TestConfiguration
     static class Wiring {
         @Bean MarketMapper marketMapper() { return mock(MarketMapper.class); }

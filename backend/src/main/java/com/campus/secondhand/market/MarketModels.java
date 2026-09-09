@@ -46,9 +46,14 @@ public final class MarketModels {
     public record Order(String orderId, String buyerId, String sellerId, String goodsId,
             @JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal orderPrice,
             int payStatus, int orderStatus,
-            LocalDateTime payTime, LocalDateTime finishTime, LocalDateTime createTime) { }
+            LocalDateTime payTime, LocalDateTime finishTime, LocalDateTime createTime, String shippingAddress) {
+        public Order(String id, String buyer, String seller, String goods, BigDecimal price, int paid, int status,
+                LocalDateTime pay, LocalDateTime finish, LocalDateTime created) {
+            this(id, buyer, seller, goods, price, paid, status, pay, finish, created, null);
+        }
+    }
 
-    public record OrderInput(@NotBlank @Size(max = 32) String goodsId) { }
+    public record OrderInput(@NotBlank @Size(max = 32) String goodsId, @Size(max = 255) String shippingAddress) { }
 
     /** 评价仅绑定真实订单（evaluate.order_id 唯一外键）；商品与评价人由后端按订单推导。 */
     public record Evaluation(String evaluateId, String orderId, String goodsId, String evaluateUserId,
