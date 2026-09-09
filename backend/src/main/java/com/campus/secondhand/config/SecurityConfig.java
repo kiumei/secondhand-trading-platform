@@ -29,7 +29,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper mapper) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper mapper, org.springframework.core.env.Environment environment,
+            org.springframework.beans.factory.ObjectProvider<com.campus.secondhand.user.UserMapper> users) throws Exception {
+        if (environment.matchesProfiles("mysql")) {
+            http.addFilterBefore(new com.campus.secondhand.auth.AccountSessionFilter(users.getObject(), mapper), org.springframework.security.web.csrf.CsrfFilter.class);
+        }
         return http
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -48,7 +52,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/health", "/api/auth/csrf").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories", "/api/media/*", "/api/public/users/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/goods", "/api/goods/*", "/api/goods/*/evaluations").permitAll()
                         // 用户收到的评价公开可读（个人主页）；/api/users/me/evaluations 仍需登录。
                         .requestMatchers(HttpMethod.GET, "/api/users/*/evaluations").permitAll()

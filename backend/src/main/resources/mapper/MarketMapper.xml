@@ -70,6 +70,7 @@
     <constructor>
       <arg column="report_id" javaType="java.lang.String"/>
       <arg column="report_user_id" javaType="java.lang.String"/>
+      <arg column="goods_id" javaType="java.lang.String"/>
       <arg column="report_type" javaType="_int"/>
       <arg column="report_content" javaType="java.lang.String"/>
       <arg column="proof_img" javaType="java.lang.String"/>
@@ -256,10 +257,10 @@
   <select id="messageCount" resultType="long">SELECT COUNT(*) FROM message <include refid="messageWhere"/></select>
 
   <!-- 举报：report 无商品外键；result 为处理结果；report_time 必填。 -->
-  <sql id="reportColumns">report_id,user_id AS report_user_id,report_type,report_content,proof_img,handle_status,result AS handle_result,report_time</sql>
+  <sql id="reportColumns">report_id,user_id AS report_user_id,goods_id,report_type,report_content,proof_img,handle_status,result AS handle_result,report_time</sql>
   <insert id="insertReport">
-    INSERT INTO report(user_id,report_type,report_content,proof_img,handle_status,result,report_time)
-    VALUES(#{reportUserId},#{reportType},#{reportContent},#{proofImg},0,NULL,#{reportTime})
+    INSERT INTO report(user_id,goods_id,report_type,report_content,proof_img,handle_status,result,report_time)
+    VALUES(#{reportUserId},#{goodsId},#{reportType},#{reportContent},#{proofImg},0,NULL,#{reportTime})
   </insert>
   <select id="report" resultMap="report">SELECT <include refid="reportColumns"/> FROM report WHERE report_id=#{id}</select>
   <update id="handleReport">UPDATE report SET handle_status=1,result=#{result} WHERE report_id=#{id} AND handle_status=0</update>
@@ -297,4 +298,6 @@
   <select id="salesAmount" resultType="java.math.BigDecimal">
     SELECT COALESCE(SUM(order_price),0) FROM orders WHERE order_status=3
   </select>
+  <select id="inbox" resultMap="message">SELECT msg_id,send_user_id,receive_user_id,content,is_read,send_time FROM message WHERE send_user_id=#{userId} OR receive_user_id=#{userId} ORDER BY send_time DESC,msg_id DESC LIMIT #{size} OFFSET #{offset}</select>
+  <select id="inboxCount" resultType="long">SELECT COUNT(*) FROM message WHERE send_user_id=#{userId} OR receive_user_id=#{userId}</select>
 </mapper>

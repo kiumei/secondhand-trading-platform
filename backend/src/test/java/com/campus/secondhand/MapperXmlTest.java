@@ -15,6 +15,14 @@ class MapperXmlTest {
                 new XMLMapperBuilder(input, configuration, resource, configuration.getSqlFragments()).parse();
             }
         }
+        var report = new com.campus.secondhand.market.MarketModels.Report("1", "2", "3", 1, "reason", null, 0, null, null);
+        var reportInsert = configuration.getMappedStatement("com.campus.secondhand.market.MarketMapper.insertReport").getBoundSql(report);
+        assertThat(reportInsert.getSql()).contains("goods_id");
+        assertThat(reportInsert.getParameterMappings()).extracting(org.apache.ibatis.mapping.ParameterMapping::getProperty).contains("goodsId");
+        var inbox = configuration.getMappedStatement("com.campus.secondhand.market.MarketMapper.inbox")
+                .getBoundSql(Map.of("userId", "2", "offset", 0, "size", 10));
+        assertThat(inbox.getParameterMappings()).extracting(org.apache.ibatis.mapping.ParameterMapping::getProperty)
+                .containsExactly("userId", "userId", "size", "offset");
         var bound = configuration.getMappedStatement("com.campus.secondhand.user.UserMapper.findByPhone")
                 .getBoundSql(Map.of("phone", "' OR 1=1 --"));
         assertThat(bound.getSql()).contains("phone = ?").doesNotContain("OR 1=1");

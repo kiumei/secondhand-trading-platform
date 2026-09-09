@@ -90,10 +90,7 @@ public class OrderService {
         state(order.orderStatus() == from, "订单当前状态不允许此操作");
         state(item.goodsStatus() == StatusCodes.GOODS_LISTED, "商品状态与订单不一致");
         changed(paid ? db.orderPay(id, from, payTime) : db.orderStatus(id, from, to, finishTime));
-        // 完成订单在同一事务内把商品置为已售出；若 DBA 的触发器负责此更新，联调时替换此处。
-        if (to == StatusCodes.ORDER_FINISHED) {
-            changed(db.goodsStatus(item.goodsId(), StatusCodes.GOODS_LISTED, StatusCodes.GOODS_SOLD, null));
-        }
+        // 商品已售出状态由数据库触发器在同一事务内更新。
         return new Order(order.orderId(), order.buyerId(), order.sellerId(), order.goodsId(),
                 order.orderPrice(), paid ? 1 : order.payStatus(), to,
                 paid ? payTime : order.payTime(), finishTime != null ? finishTime : order.finishTime(),

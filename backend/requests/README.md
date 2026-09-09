@@ -1,6 +1,6 @@
 # 接口请求集合
 
-导入 `secondhand.postman_collection.json` 到 Postman，包含 42 个可选择执行的请求。集合字段已按《前端确认文档（DBA 测试员答复版）》对齐最新接口：商品请求使用 `cateId`，分类请求使用 `cateName`/`parentId`（数据库已无 `cate_desc`），举报请求不再携带 `goodsId`（`report` 表无商品外键）。
+导入 `secondhand.postman_collection.json` 到 Postman，包含 42 个可选择执行的请求。集合字段已按《前端确认文档（DBA 测试员答复版）》对齐最新接口：商品请求使用 `cateId`，分类请求使用 `cateName`/`parentId`（数据库已无 `cate_desc`），举报请求必须携带 `goodsId`，关联实际商品。
 
 集合尚未包含本轮新增接口的请求：商品多图 `images` 字段、收藏 `/api/favorites`、管理员仪表盘 `/api/admin/dashboard`、用户管理 `/api/admin/users/*`（封禁/解封/重置密码）、管理员订单 `/api/admin/orders` 与评价管理 `/api/admin/evaluations`、用户收到评价 `/api/users/{id}/evaluations`。联调时按 [前后端交接建议](../../docs/backend-frontend-handoff.md) 手动补充。集合不会自行创建数据库、账号或演示数据。
 
@@ -17,7 +17,7 @@
 
 先执行“获取当前会话 CSRF”，响应脚本会设置 csrfToken 与 csrfHeader。写请求自动引用这两个变量。
 
-登录后会话 ID 和 CSRF 会刷新，所以每次登录或退出后都需要重新执行“获取当前会话 CSRF”。集合在登录与退出成功时清空旧 token，防止误用。403 表示权限或 CSRF 问题；先检查当前用户与 token，不要直接认定登录失败。被封禁账号（status=1）登录返回 403 USER_BANNED。
+登录后会话 ID 和 CSRF 会刷新，所以每次登录或退出后都需要重新执行“获取当前会话 CSRF”。集合在登录与退出成功时清空旧 token，防止误用。403 表示权限或 CSRF 问题；先检查当前用户与 token，不要直接认定登录失败。被封禁账号（status=1）登录返回 403 ACCOUNT_BANNED。
 
 登录买家和卖家时分别保存 buyerId、sellerId。发布商品、创建订单、发送消息、提交举报会分别保存 goodsId、orderId、msgId、reportId。新增分类保存 categoryId。
 
@@ -34,7 +34,7 @@
 
 取消订单需另选未支付订单；商品驳回需另选待审核商品；下架需选择上架且没有有效订单的商品。不要对已完成主流程的同一记录强行执行这些分支。
 
-私信：买家发送给 sellerId → 卖家登录后标记 msgId 已读。举报：用户提交 → 管理员查看并处理；处理不自动下架。
+私信：买家发送给 sellerId → 卖家登录后标记 msgId 已读。举报：提交真实 goodsId，reportType 使用 1至5（假冒伪劣、欺诈行为、辱骂骚扰、违规违禁品、其他）；成功后保存 reportId，管理员可查看并处理，处理不自动下架。
 
 ## 请求覆盖与验证范围
 

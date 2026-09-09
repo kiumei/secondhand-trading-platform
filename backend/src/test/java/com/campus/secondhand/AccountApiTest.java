@@ -144,7 +144,7 @@ class AccountApiTest {
         mvc.perform(write("/api/auth/login", """
                 {"phone":"13800000000","password":"test-password"}
                 """))
-                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("USER_BANNED"));
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("ACCOUNT_BANNED"));
     }
 
     @Test void wrongPasswordAndUnknownPhoneHaveSamePublicError() throws Exception {
@@ -175,17 +175,17 @@ class AccountApiTest {
         var session = login("13800000000", "test-password");
         var csrf = mvc.perform(get("/api/auth/csrf").session(session)).andReturn();
         String token = json.readTree(csrf.getResponse().getContentAsString()).at("/data/token").asText();
-        when(users.updateProfile("student-id", "新昵称", null, "")).thenReturn(1);
+        when(users.updateProfile("student-id", "新昵称", null, "", null)).thenReturn(1);
         mvc.perform(patch("/api/users/me").session(session).header("X-CSRF-TOKEN", token)
                 .contentType("application/json").content("""
                     {"userName":"新昵称","intro":"","userId":"victim","role":1,"phone":"changed"}
                     """))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.role").value(0));
-        verify(users).updateProfile("student-id", "新昵称", null, "");
+        verify(users).updateProfile("student-id", "新昵称", null, "", null);
         mvc.perform(patch("/api/users/me").session(session).header("X-CSRF-TOKEN", token)
                 .contentType("application/json").content("{\"userName\":\" \"}"))
                 .andExpect(status().isBadRequest());
-        verify(users, times(1)).updateProfile(any(), any(), any(), any());
+        verify(users, times(1)).updateProfile(any(), any(), any(), any(), any());
     }
 
     @Test void adminCanBanStudentButNotAdminAccounts() throws Exception {

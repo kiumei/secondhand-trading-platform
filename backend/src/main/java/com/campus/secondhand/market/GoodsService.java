@@ -130,7 +130,7 @@ public class GoodsService {
     /** 编辑时图片整体替换：images=null 保留原图，空列表清空；新发布直接写入。 */
     private void saveImages(String goodsId, List<String> images) {
         if (images == null) { return; }
-        changed(db.deleteImages(goodsId));
+        db.deleteImages(goodsId); // 允许原来无图或多图，删除行数不限定为1。
         insertImages(goodsId, images);
     }
 

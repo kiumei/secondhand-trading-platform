@@ -13,9 +13,10 @@
       <arg column="role" javaType="_int"/>
       <arg column="status" javaType="_int"/>
       <arg column="register_time" javaType="java.time.LocalDateTime"/>
+      <arg column="address" javaType="java.lang.String"/>
     </constructor>
   </resultMap>
-  <sql id="columns">user_id, user_name, password, phone, avatar, intro, role, status, register_time</sql>
+  <sql id="columns">user_id, user_name, password, phone, avatar, intro, role, status, register_time, address</sql>
   <select id="findByPhone" resultMap="user">
     SELECT <include refid="columns"/> FROM sys_user WHERE phone = #{phone}
   </select>
@@ -34,6 +35,7 @@
       <if test="userName != null">user_name = #{userName},</if>
       <if test="avatar != null">avatar = #{avatar},</if>
       <if test="intro != null">intro = #{intro},</if>
+      <if test="address != null">address = #{address},</if>
     </set>
     WHERE user_id = #{userId}
   </update>
@@ -56,4 +58,6 @@
   </select>
   <select id="adminCount" resultType="long">SELECT COUNT(*) FROM sys_user <include refid="adminWhere"/></select>
   <select id="countUsers" resultType="long">SELECT COUNT(*) FROM sys_user</select>
+  <select id="publicProfile" resultType="com.campus.secondhand.user.PublicUserView">SELECT CAST(user_id AS CHAR) AS userId,user_name AS userName,avatar,intro FROM sys_user WHERE user_id=#{id}</select>
+  <update id="changePassword">UPDATE sys_user SET password=#{newHash} WHERE user_id=#{id} AND password=#{oldHash}</update>
 </mapper>

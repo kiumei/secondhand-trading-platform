@@ -9,7 +9,7 @@
 1. 前端以 `multipart/form-data` 调用 `POST /api/uploads/images`，字段名 `file`，带登录 Cookie 和 CSRF 请求头。不要手动指定 multipart 的 Content-Type 边界。
 2. 后端校验并重新编码 JPEG/PNG，保存到 `UPLOAD_DIRECTORY` 指定的目录，返回 `data.url`、`data.width`、`data.height`。默认目录为启动工作目录下的 `uploads`，单文件最多 5 MB，最多 1600 万像素、单边不超过 8000 像素。
 3. 前端将返回的 `/api/media/{文件名}` 作为图片地址展示。该 GET 地址可匿名读取，适用于公开商品图或头像；不要上传私密举报凭证。前端占位图片无需写入数据库。
-4. 商品发布/编辑已接收 images 地址数组，通过现有 goods_image(img_id, goods_id, img_url, sort_order) 保存，最多4张。响应返回 images，第一张作为 coverImg。编辑时省略或 null 保留原图，空数组清空关联。
+4. 商品发布/编辑已接收 images 地址数组，通过现有 goods_image(img_id, goods_id, img_url, sort_order) 保存，最多4张。响应返回 images，第一张作为 coverUrl。编辑时省略或 null 保留原图，空数组清空关联。
 
 上传目录需持久保存，部署迁移时同时迁移文件。上传成功仅表示文件保存，商品提交成功后才保存关联；未绑定上传暂不自动清理。
 
@@ -19,7 +19,7 @@
 - 商品状态与当前 SQL 一致：0待审核、1上架、2下架、3已售、4驳回。公开列表只查上架商品，是否能下单另看 purchasable。
 - 字段映射改为当前数据库列名：用户 role、商品 user_id/trade_method/description/quality、分类 cate_id；分类描述不存在，返回 null，非空描述写入明确拒绝。
 - 评价只存订单关联，商品和评价买家通过 orders 联查。新增订单写 pay_status=0，模拟支付同步 pay_status/pay_time，完成同步 finish_time 和商品已售状态。
-- 举报按 user_id/result 等现有列读取和处理。goods_id 已接入查询和提交；reportType 为字符串1至5，handleStatus 为数字0待处理、1已处理。
+- 举报按 user_id/result 等现有列读取和处理。goods_id 已接入查询和提交；reportType 为数字1至5，handleStatus 为数字0待处理、1已处理。
 - 新增公开用户资料、管理员用户/订单/评价列表、当前用户全部私信以及本人修改密码接口，供现有前端页面接入。
 - 当前完整 SQL 已包含订单完成更新商品、封禁下架商品、禁止未完成订单评价三个触发器。后端已删除订单完成时的重复商品更新，保留权限和评价前置校验。
 - 用户 status 为0正常、1封禁；封禁登录返回403 ACCOUNT_BANNED，已有会话下次请求失效并返回401 UNAUTHENTICATED。个人资料支持 address 读写（最长255字符），省略或 null 保留，空字符串清空。公开用户资料不暴露地址。

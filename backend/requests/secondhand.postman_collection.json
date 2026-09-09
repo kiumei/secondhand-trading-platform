@@ -1707,7 +1707,7 @@
             "description": "仅在联调测试库中按需执行。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"reportType\": \"{{reportType}}\",\n  \"reportContent\": \"{{reportContent}}\"\n}",
+              "raw": "{\n  \"goodsId\": \"{{goodsId}}\",\n  \"reportType\": \"{{reportType}}\",\n  \"reportContent\": \"{{reportContent}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1721,12 +1721,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
-                  "if (pm.response.code === 200) {",
-                  "  const response = pm.response.json();",
-                  "  pm.test(\"统一响应 OK\", function () { pm.expect(response.code).to.eql(\"OK\"); });",
-                  "  if (response.data && response.data.reportId != null) pm.collectionVariables.set(\"reportId\", response.data.reportId);",
-                  "}"
+                  "pm.test(\"举报关联商品保存成功\", () => { pm.response.to.have.status(200); const r = pm.response.json(); pm.expect(r.code).to.eql(\"OK\"); pm.expect(r.data.goodsId).to.eql(pm.variables.get(\"goodsId\")); pm.collectionVariables.set(\"reportId\", r.data.reportId); });"
                 ]
               }
             }

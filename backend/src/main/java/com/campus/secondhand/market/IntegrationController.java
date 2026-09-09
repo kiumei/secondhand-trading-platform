@@ -20,28 +20,6 @@ public class IntegrationController {
     public ApiResponse<PublicUserView> profile(@PathVariable String id) {
         return ApiResponse.success(found(users.publicProfile(id)));
     }
-    @GetMapping("/api/admin/users")
-    public ApiResponse<PageResult<UserView>> users(@Valid @ModelAttribute PageQuery page) {
-        return ApiResponse.success(new PageResult<>(users.list(page.getOffset(), page.getPageSize()).stream()
-                .map(UserView::from).toList(), users.count(), page.getPage(), page.getPageSize()));
-    }
-    @GetMapping("/api/admin/orders")
-    public ApiResponse<PageResult<Order>> orders(@Valid @ModelAttribute PageQuery page) {
-        return ApiResponse.success(new PageResult<>(market.adminOrders(page.getOffset(), page.getPageSize()),
-                market.adminOrderCount(), page.getPage(), page.getPageSize()));
-    }
-    @GetMapping("/api/admin/dashboard")
-    public ApiResponse<Dashboard> dashboard() { return ApiResponse.success(market.dashboard()); }
-    @DeleteMapping("/api/admin/evaluations/{id}")
-    public ApiResponse<Void> deleteEvaluation(@PathVariable String id) {
-        com.campus.secondhand.market.MarketRules.changed(market.deleteEvaluation(id));
-        return ApiResponse.success(null);
-    }
-    @GetMapping("/api/admin/evaluations")
-    public ApiResponse<PageResult<Evaluation>> evaluations(@Valid @ModelAttribute PageQuery page) {
-        return ApiResponse.success(new PageResult<>(market.adminEvaluations(page.getOffset(), page.getPageSize()),
-                market.adminEvaluationCount(), page.getPage(), page.getPageSize()));
-    }
     @GetMapping("/api/users/me/messages")
     public ApiResponse<PageResult<Message>> messages(Authentication auth, @Valid @ModelAttribute PageQuery page) {
         String id = CurrentUser.id(auth);

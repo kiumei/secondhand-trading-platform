@@ -8,4 +8,6 @@ import java.time.LocalDateTime;
  * status：0 正常、1 封禁（管理员封禁/解封使用）。
  */
 public record UserRow(String userId, String userName, String password, String phone,
-        String avatar, String intro, int role, int status, LocalDateTime registerTime) { }
+        String avatar, String intro, int role, int status, LocalDateTime registerTime, String address) {
+    public UserRow(String id,String name,String password,String phone,String avatar,String intro,int role,int status,LocalDateTime time) { this(id,name,password,phone,avatar,intro,role,status,time,null); }
+}

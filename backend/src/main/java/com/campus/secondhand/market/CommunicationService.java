@@ -37,13 +37,14 @@ public class CommunicationService {
         if (message.isRead() == 0) { db.readMessage(id, user); }
     }
 
-    /** 举报不绑定商品（report 表无商品外键）；记录举报人、类型、内容与证据。 */
+    /** 举报保存商品关联、举报人、类型、内容与证据。 */
     @Transactional
     public Report report(String user, ReportInput input) {
-        var report = new Report(null, user, input.reportType(), input.reportContent(),
+        found(db.goods(input.goodsId()));
+        var report = new Report(null, user, input.goodsId(), input.reportType(), input.reportContent(),
                 input.proofImg(), 0, null, now());
         changed(db.insertReport(report));
-        return new Report(String.valueOf(db.lastInsertId()), report.reportUserId(), report.reportType(),
+        return new Report(String.valueOf(db.lastInsertId()), report.reportUserId(), report.goodsId(), report.reportType(),
                 report.reportContent(), report.proofImg(), report.handleStatus(),
                 report.handleResult(), report.reportTime());
     }

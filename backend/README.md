@@ -11,11 +11,11 @@
 - 列名以 DBA 重新对齐的 `db/secondhand_full.sql` 为准（goods.user_id/trade_method/description/quality、category.cate_id/parent_id/sort、orders.buyer_id/seller_id/pay_status/pay_time/finish_time、evaluate.eva_id/order_id/score/content/eva_time、report.user_id/result/report_time、sys_user.role/status）。除 orders.order_id 为 varchar(32) 手工流水号（UUID 去连字符）外，其余表主键均为 int 自增，插入后通过同事务连接的 `SELECT LAST_INSERT_ID()` 取回。
 - 状态码：商品 goods_status 0待审核、1上架、2下架、3已售出、4驳回（DBA 特别修订口径）；订单 order_status 0待付款、1待发货、2待收货、3完成、4取消、5售后；pay_status 0未支付、1已支付；用户 status 0正常、1封禁。
 - API JSON 字段名沿用确认文档口径（goodsId/sellPrice/tradeType/goodsDesc/qualityLevel/goodsStatus/cateId/evaluateContent 等），并在 XML 中完成到数据库列名的映射。
-- 登录标识为手机号（char(11) 唯一），注册/登录统一校验 11 位数字；被封禁用户（status=1）登录返回 403 USER_BANNED。
+- 登录标识为手机号（char(11) 唯一），注册/登录统一校验 11 位数字；被封禁用户（status=1）登录返回 403 ACCOUNT_BANNED。
 - 评价必须绑定真实已完成订单（D2）：订单号来自请求路径，商品与评价人由订单推导，禁止传 0；evaluate.order_id 唯一约束兜底重复提交。
-- 举报不再绑定商品（report 表无商品外键），记录举报人、类型、内容、证据与处理结果（result）。
+- 举报通过 goods_id 绑定商品，记录举报人、类型、内容、证据与处理结果（result）。
 
-当前不会创建业务表、修改原 SQL、插入演示数据或创建触发器。按用户安排，等 DBA 完成数据库后根据其实际触发器定义调整代码；若没有定义，不自行新增触发器。当前完成订单与商品售出的关联更新由后端事务负责。
+当前不会创建业务表、修改原 SQL、插入演示数据或创建触发器。按用户安排，等 DBA 完成数据库后根据其实际触发器定义调整代码；若没有定义，不自行新增触发器。当前完成订单的商品售出更新由完整 SQL 中的触发器负责，后端不重复更新。
 
 ## 启动与测试
 
@@ -75,7 +75,7 @@ mysql 模式提供：
 | 接口 | 请求 | 结果 |
 | --- | --- | --- |
 | POST /api/auth/register | phone（11 位数字）、password、userName | 创建学生账号，返回公开字段，不自动登录 |
-| POST /api/auth/login | phone、password | 更新会话 ID，保存认证状态，返回用户信息；封禁账号返回 403 USER_BANNED |
+| POST /api/auth/login | phone、password | 更新会话 ID，保存认证状态，返回用户信息；封禁账号返回 403 ACCOUNT_BANNED |
 | GET /api/users/me | 会话 Cookie | 读取当前用户资料，不含密码哈希 |
 | GET /api/categories | 无 | 两级分类数组，字段 cateId、cateName、parentId、sort（parent_id=0 为一级分类） |
 
@@ -85,7 +85,7 @@ mysql 模式提供：
 
 当前只实现已有字段长度与非空校验：手机号 11 位数字、昵称最长 20 字符，密码非空且 UTF-8 不超过 BCrypt 的 72 字节限制。密码复杂度未自行制定。密码哈希保存为不带算法前缀的 BCrypt 格式。
 
-错误码：PHONE_EXISTS（409），BAD_CREDENTIALS（401），USER_BANNED（403），INVALID_REQUEST（400）。非法注册 role/userId 字段不会改变后端生成的身份信息。
+错误码：PHONE_EXISTS（409），BAD_CREDENTIALS（401），ACCOUNT_BANNED（403），INVALID_REQUEST（400）。非法注册 role/userId 字段不会改变后端生成的身份信息。
 
 注册事务依赖真实数据库验证；MyBatis XML 解析通过不等于 SQL 已在 MySQL 执行通过。原始建表 SQL 未修改，业务 SQL 列名严格对齐 DBA 重新对齐的 `db/secondhand_full.sql` 转储。商品状态采用 DBA 修订口径：0待审核、1上架、2下架、3已售出、4驳回；订单状态沿用 PDM 的 0待付款、1待发货、2待收货、3完成、4取消、5售后。交易模块已实现，触发器关联更新按 DBA 最终定义再调整。
 

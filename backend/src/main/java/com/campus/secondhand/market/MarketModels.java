@@ -62,11 +62,11 @@ public final class MarketModels {
     public record MessageInput(@NotBlank @Size(max = 32) String receiveUserId,
             @NotBlank @Size(max = 500) String content) { }
 
-    /** report 表无商品外键，举报仅记录举报人、类型、内容、证据与处理结果。 */
-    public record Report(String reportId, String reportUserId, int reportType, String reportContent,
+    /** report 通过 goods_id 关联被举报商品。 */
+    public record Report(String reportId, String reportUserId, String goodsId, int reportType, String reportContent,
             String proofImg, int handleStatus, String handleResult, LocalDateTime reportTime) { }
 
-    public record ReportInput(@NotNull @Min(1) @Max(5) Integer reportType,
+    public record ReportInput(@NotBlank @Size(max=32) String goodsId, @NotNull @Min(1) @Max(5) Integer reportType,
             @NotBlank @Size(max = 500) String reportContent,
             @Size(max = 255) String proofImg) { }
 

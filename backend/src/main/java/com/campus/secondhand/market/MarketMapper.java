@@ -8,6 +8,8 @@ import org.apache.ibatis.annotations.Param;
 import static com.campus.secondhand.market.MarketModels.*;
 
 public interface MarketMapper {
+    java.util.List<Message> inbox(@Param("userId") String userId,@Param("offset") long offset,@Param("size") int size);
+    long inboxCount(@Param("userId") String userId);
     Category category(@Param("id") String id);
     int insertCategory(@Param("body") CategoryInput body);
     int updateCategory(@Param("id") String id, @Param("body") CategoryInput body);

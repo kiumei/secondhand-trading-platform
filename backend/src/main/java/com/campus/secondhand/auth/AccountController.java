@@ -40,7 +40,7 @@ public class AccountController {
             HttpServletRequest request, HttpServletResponse response) {
         var user = accounts.authenticate(input.phone(), input.password());
         var authentication = UsernamePasswordAuthenticationToken.authenticated(
-                new AccountService.Principal(user.userId()), null,
+                new AccountService.Principal(user.userId(), AccountService.credentialVersion(user)), null,
                 List.of(new SimpleGrantedAuthority(user.role() == 1 ? "ROLE_ADMIN" : "ROLE_STUDENT")));
         new ChangeSessionIdAuthenticationStrategy().onAuthentication(authentication, request, response);
         new CsrfAuthenticationStrategy(new HttpSessionCsrfTokenRepository())
@@ -69,9 +69,16 @@ public class AccountController {
     @PatchMapping("/api/users/me")
     public ApiResponse<UserView> update(Authentication auth, @Valid @RequestBody ProfileRequest body) {
         return ApiResponse.success(accounts.updateProfile(com.campus.secondhand.common.CurrentUser.id(auth),
-                body.userName(), body.avatar(), body.intro()));
+                body.userName(), body.avatar(), body.intro(), body.address()));
     }
 
+    @PutMapping("/api/users/me/password")
+    public ApiResponse<Void> password(Authentication auth, @Valid @RequestBody PasswordRequest body) {
+        accounts.changePassword(com.campus.secondhand.common.CurrentUser.id(auth), body.oldPassword(), body.newPassword());
+        return ApiResponse.success(null);
+    }
+    public record PasswordRequest(@NotBlank @Size(max=72) String oldPassword,@NotBlank @Size(max=72) String newPassword) { }
+
     public record ProfileRequest(@Size(max = 20) String userName,
-            @Size(max = 255) String avatar, @Size(max = 200) String intro) { }
+            @Size(max = 255) String avatar, @Size(max = 200) String intro, @Size(max = 255) String address) { }
 }

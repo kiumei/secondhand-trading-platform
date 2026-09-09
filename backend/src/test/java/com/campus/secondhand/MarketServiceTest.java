@@ -186,17 +186,16 @@ class MarketServiceTest {
         assertThat(orders.detail("o", "buyer").orderId()).isEqualTo("o");
         assertThat(orders.detail("o", "seller").orderId()).isEqualTo("o");
     }
-    @Test void completionChangesBothRecordsInDefinedOrder() {
+    @Test void completionLeavesGoodsUpdateToDatabaseTrigger() {
         when(db.order("o")).thenReturn(order(2)); when(db.lockOrder("o")).thenReturn(order(2));
         when(db.orderStatus(eq("o"), eq(2), eq(3), any())).thenReturn(1);
-        when(db.goodsStatus("g", 1, 3, null)).thenReturn(1);
         var finished = orders.action("o", "buyer", "complete");
         assertThat(finished.orderStatus()).isEqualTo(3);
         assertThat(finished.finishTime()).isNotNull();
         var sequence = inOrder(db);
         sequence.verify(db).order("o"); sequence.verify(db).lockGoods("g"); sequence.verify(db).lockOrder("o");
         sequence.verify(db).orderStatus(eq("o"), eq(2), eq(3), any());
-        sequence.verify(db).goodsStatus("g", 1, 3, null);
+        verify(db, never()).goodsStatus(any(), anyInt(), anyInt(), any());
     }
     @Test void paymentSetsPayStatusPayTimeAndTime() {
         when(db.orderPay(any(), anyInt(), any())).thenReturn(1);
@@ -283,17 +282,18 @@ class MarketServiceTest {
     @Test void reportRecordsReporterTypeAndNeverTouchesGoods() {
         when(db.insertReport(any())).thenReturn(1);
         when(db.lastInsertId()).thenReturn(21L);
-        var report = communication.report("buyer", new ReportInput(3, "原因", null));
+        var report = communication.report("buyer", new ReportInput("g", 3, "原因", null));
         assertThat(report.reportId()).isEqualTo("21");
         assertThat(report.reportUserId()).isEqualTo("buyer");
         assertThat(report.handleStatus()).isZero();
         assertThat(report.reportType()).isEqualTo(3);
         assertThat(report.reportTime()).isNotNull();
-        verify(db, never()).goods(any());
+        assertThat(report.goodsId()).isEqualTo("g");
+        verify(db).goods("g");
         when(db.report("21")).thenReturn(report); when(db.handleReport("21", "已处理")).thenReturn(1);
         communication.handle("21", "已处理");
         verify(db).handleReport("21", "已处理");
-        when(db.report("21")).thenReturn(new Report("21", "buyer", 3, "原因", null, 1, "已处理", report.reportTime()));
+        when(db.report("21")).thenReturn(new Report("21", "buyer", "g", 3, "原因", null, 1, "已处理", report.reportTime()));
         var handled = communication.handle("21", "已处理");
         assertThat(handled.handleStatus()).isEqualTo(1);
         verify(db, never()).goodsStatus(any(), anyInt(), anyInt(), any());
