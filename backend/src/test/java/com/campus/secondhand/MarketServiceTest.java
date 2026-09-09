@@ -298,4 +298,45 @@ class MarketServiceTest {
         assertThat(handled.handleStatus()).isEqualTo(1);
         verify(db, never()).goodsStatus(any(), anyInt(), anyInt(), any());
     }
+    @Test void shippingAddressIsStoredOnceAndPreservedByOrderActions() {
+        when(db.insertOrder(any())).thenReturn(1);
+        var created = orders.create("buyer", "g", "  校区1栋  ");
+        assertThat(created.shippingAddress()).isEqualTo("校区1栋");
+        verify(db).insertOrder(argThat(row -> "校区1栋".equals(row.shippingAddress())));
+        when(db.order(created.orderId())).thenReturn(created);
+        when(db.lockOrder(created.orderId())).thenReturn(created);
+        when(db.orderPay(eq(created.orderId()), eq(0), any())).thenReturn(1);
+        var paid = orders.action(created.orderId(), "buyer", "mock-pay");
+        assertThat(paid.shippingAddress()).isEqualTo("校区1栋");
+        assertThat(orders.create("buyer", "g", null).shippingAddress()).isNull();
+        assertThatThrownBy(() -> orders.create("buyer", "g", "x".repeat(256))).isInstanceOf(BusinessException.class);
+    }
+    @Test void activeOrderPreventsOffShelfButBuyerCanCancelAfterForcedOffShelf() {
+        when(db.activeOrderIds("g")).thenReturn(List.of("o"));
+        assertThatThrownBy(() -> goods.offShelf("g", "seller", false)).isInstanceOf(BusinessException.class);
+        verify(db, never()).goodsStatus(any(), anyInt(), anyInt(), any());
+        when(db.lockGoods("g")).thenReturn(item(StatusCodes.GOODS_OFF_SHELF));
+        when(db.orderStatus("o", 0, 4, null)).thenReturn(1);
+        assertThat(orders.action("o", "buyer", "cancel").orderStatus()).isEqualTo(4);
+    }
+    @Test void parentWithChildrenCannotBeMovedBelowAnotherCategory() {
+        when(db.categoryChildren("c")).thenReturn(1L);
+        assertThatThrownBy(() -> goods.saveCategory(new CategoryInput("教材", 2, 0), "c"))
+                .isInstanceOf(BusinessException.class);
+        verify(db).lockCategories();
+        verify(db, never()).updateCategory(any(), any());
+    }
+    @Test void imageReplacementWorksForZeroOrMultipleExistingImagesAndRejectsBase64() {
+        var body = new GoodsInput("c", "新标题", new BigDecimal("19.99"), null, 2, "描述", 4, List.of("/api/media/" + "a".repeat(32) + ".png"));
+        when(db.category("c")).thenReturn(category());
+        when(db.updateGoods("g", body)).thenReturn(1);
+        when(db.insertImages(eq("g"), anyList())).thenReturn(1);
+        when(db.deleteImages("g")).thenReturn(0, 4);
+        goods.edit("g", "seller", body);
+        goods.edit("g", "seller", body);
+        verify(db, times(2)).insertImages("g", body.images());
+        var invalid = new GoodsInput("c", "新标题", new BigDecimal("19.99"), null, 2, "描述", 4, List.of("data:image/png;base64,AA=="));
+        assertThatThrownBy(() -> goods.publish("seller", invalid)).isInstanceOf(BusinessException.class);
+        verify(db, never()).insertGoods(any(), any());
+    }
 }

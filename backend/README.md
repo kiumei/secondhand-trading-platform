@@ -100,7 +100,7 @@ mysql 模式提供：
 - 订单：同一事务先锁商品再检查有效订单；金额取数据库售价；创建时 pay_status=0。模拟支付置 pay_status=1 并写 pay_time；确认完成写 finish_time 并在同一事务把商品置为已售出（3）。有效订单包括 0/1/2/3/5，取消订单不阻止再次购买；仅未支付订单允许取消。重复状态操作返回 409，不重复成交。没有自动超时取消。
 - 评价：只允许已完成订单的买家评价一次，必须绑定路径中的真实订单 ID（禁止传 0）；商品与评价人由订单推导；锁后使用当前读检查已存在评价，evaluate.order_id 唯一约束兜底重复提交。`GET /api/users/{id}/evaluations` 公开返回指定用户作为卖家收到的评价；`GET /api/users/me/evaluations` 返回当前用户提交的评价。
 - 私信：只查询当前用户与指定对方的会话；只有接收人可标记已读。消息按发送时间和 ID 倒序分页。数据库仅存文字内容，不支持图片消息。
-- 举报：记录举报人、类型、内容与证据地址；report 表无商品外键，不再绑定商品。管理员填写处理结果（result 列），下架通过独立商品操作完成。列表按举报时间和 ID 倒序分页。
+- 举报：记录举报人、类型、内容与证据地址；report.goods_id 关联被举报商品。管理员填写处理结果（result 列），下架通过独立商品操作完成。列表按举报时间和 ID 倒序分页。
 - 收藏：POST/DELETE `/api/favorites`；`GET /api/favorites` 按收藏时间倒序分页返回收藏的商品；`GET /api/favorites/{goodsId}` 查询是否已收藏。
 - 管理员（B1–B4）：`GET /api/admin/dashboard` 返回用户数、商品数、订单数、销售额（已完成订单合计）与待审核商品数；`GET /api/admin/users` 关键词分页，`ban/unban` 切换 status（0 正常/1 封禁，管理员账号不可封禁），`reset-password` 未传密码时生成 8 位随机密码并仅在响应中返回一次；`GET /api/admin/orders` 与 `GET /api/admin/evaluations`（`DELETE` 删除违规评价）支持分页与状态筛选；两级分类管理校验父分类必须为一级，删除前检查商品与子分类。
 
@@ -128,3 +128,5 @@ java -jar target/secondhand-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=
 该脚本在随机本地端口启动 JAR，检查 health、CSRF、401、403、退出及旧 token 失效，完成后关闭自己启动的 Java 进程。日志位于 target/packaged-verification，不包含账号密码或 token。
 
 2026-09-08：`mvn test -B -ntp` 返回 BUILD SUCCESS，64 项测试全部通过；`mvn package -DskipTests` 生成打包 JAR，local 模式启动和基础检查（health、CSRF、401/403、退出、旧 token 失效）返回 PASS，验证进程自行关闭。请求集合共 42 项，已按新口径修正分类/商品/举报字段并检查 JSON、变量引用和脚本语法；收藏、仪表盘与管理员用户新增端点暂未加入集合；未在 Postman 与真实数据库中运行完整业务流程。打包输出与日志位于已忽略的 target 目录，未提交或推送。
+
+订单 shippingAddress 已接入 orders.shipping_address，最长255字符、可选；下单保存后不随个人 address 变动。商品存在有效订单时禁止普通下架；封禁触发器强制下架后，买家仍可取消未支付订单。上传大小配置为单文件5 MB，请求6 MB，目录由 UPLOAD_DIRECTORY 指定。

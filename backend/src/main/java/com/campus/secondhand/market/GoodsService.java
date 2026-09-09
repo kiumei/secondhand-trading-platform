@@ -85,6 +85,7 @@ public class GoodsService {
         var item = found(db.lockGoods(id));
         allow(admin || item.publishUserId().equals(owner));
         state(item.goodsStatus() == StatusCodes.GOODS_LISTED, "只有上架商品可以下架");
+        state(db.activeOrderIds(id).isEmpty(), "商品存在有效订单，不能下架");
         changed(db.goodsStatus(id, StatusCodes.GOODS_LISTED, StatusCodes.GOODS_OFF_SHELF, null));
     }
 
@@ -103,6 +104,7 @@ public class GoodsService {
 
     @Transactional
     public Category saveCategory(CategoryInput body, String id) {
+        db.lockCategories();
         validateCategory(body, id);
         if (id == null) {
             changed(db.insertCategory(body));
@@ -116,6 +118,7 @@ public class GoodsService {
 
     @Transactional
     public void deleteCategory(String id) {
+        db.lockCategories();
         found(db.category(id));
         state(db.categoryGoods(id) == 0, "分类仍有关联商品，不能删除");
         state(db.categoryChildren(id) == 0, "分类仍有子分类，不能删除");
@@ -146,6 +149,13 @@ public class GoodsService {
         if (body.images() != null) {
             for (String url : body.images()) {
                 require(url != null && !url.isBlank() && url.length() <= 500, "图片地址不能为空且长度不超过 500");
+                boolean valid = url.matches("/api/media/[a-f0-9]{32}\\.(jpg|png)");
+                try {
+                    var uri = java.net.URI.create(url);
+                    valid |= ("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
+                            && uri.getHost() != null && uri.getUserInfo() == null;
+                } catch (IllegalArgumentException ignored) { }
+                require(valid, "图片必须为上传接口地址或HTTP(S) URL");
             }
         }
     }
@@ -156,6 +166,7 @@ public class GoodsService {
         if (selfId != null && String.valueOf(body.parentId()).equals(selfId)) {
             throw new BusinessException(HttpStatus.CONFLICT, "STATE_CONFLICT", "父分类不能是分类自身");
         }
+        state(selfId == null || db.categoryChildren(selfId) == 0, "有子分类的分类不能移到第二级");
         var parent = found(db.category(String.valueOf(body.parentId())));
         state(parent.parentId() == null || parent.parentId() == 0, "分类最多两级，父分类必须是一级分类");
     }

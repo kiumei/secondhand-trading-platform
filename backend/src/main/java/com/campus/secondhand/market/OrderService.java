@@ -16,14 +16,19 @@ public class OrderService {
     public OrderService(MarketMapper db) { this.db = db; }
 
     @Transactional
-    public Order create(String buyer, String goodsId) {
+    public Order create(String buyer, String goodsId) { return create(buyer, goodsId, null); }
+
+    @Transactional
+    public Order create(String buyer, String goodsId, String shippingAddress) {
+        require(shippingAddress == null || shippingAddress.length() <= 255, "收货地址不能超过255字符");
+        String address = shippingAddress == null || shippingAddress.isBlank() ? null : shippingAddress.strip();
         var item = found(db.lockGoods(goodsId));
         allow(!item.publishUserId().equals(buyer));
         // 仅上架商品可下单；有效订单（0/1/2/3/5）存在即视为已被占用。
         state(item.goodsStatus() == StatusCodes.GOODS_LISTED && db.activeOrderIds(goodsId).isEmpty(),
                 "商品当前不可购买");
         var order = new Order(id(), buyer, item.publishUserId(), goodsId, item.sellPrice(),
-                0, StatusCodes.ORDER_UNPAID, null, null, now());
+                0, StatusCodes.ORDER_UNPAID, null, null, now(), address);
         changed(db.insertOrder(order));
         return order;
     }
@@ -88,13 +93,13 @@ public class OrderService {
             default -> throw new IllegalArgumentException("未知订单动作");
         }
         state(order.orderStatus() == from, "订单当前状态不允许此操作");
-        state(item.goodsStatus() == StatusCodes.GOODS_LISTED, "商品状态与订单不一致");
+        state(to == StatusCodes.ORDER_CANCELLED || item.goodsStatus() == StatusCodes.GOODS_LISTED, "商品状态与订单不一致");
         changed(paid ? db.orderPay(id, from, payTime) : db.orderStatus(id, from, to, finishTime));
         // 商品已售出状态由数据库触发器在同一事务内更新。
         return new Order(order.orderId(), order.buyerId(), order.sellerId(), order.goodsId(),
                 order.orderPrice(), paid ? 1 : order.payStatus(), to,
                 paid ? payTime : order.payTime(), finishTime != null ? finishTime : order.finishTime(),
-                order.createTime());
+                order.createTime(), order.shippingAddress());
     }
 
     /** 评价必须绑定真实已完成订单（D2）：订单号来自路径，商品与评价人由订单推导，禁止传 0。 */

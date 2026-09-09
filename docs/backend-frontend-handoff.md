@@ -69,8 +69,8 @@
 | 注册 | `POST /auth/register` | phone、password、userName |
 | 登录/退出 | `POST /auth/login`、`POST /auth/logout` | 登录提交 phone、password；退出无需业务参数 |
 | 当前用户 | `GET /users/me`、`PATCH /users/me` | 读取和修改 userName、avatar、intro、address；手机号变更暂不开放 |
-| 分类 | `GET /categories` | 返回 categoryId、cateName、cateDesc（当前为 null）；不保存描述 |
-| 商品列表 | `GET /goods` | keyword、categoryId、minPrice、maxPrice、sellerId、page、pageSize |
+| 分类 | `GET /categories` | 返回 cateId、cateName、parentId、sort；不保存描述 |
+| 商品列表 | `GET /goods` | keyword、cateId、minPrice、maxPrice、sort、page、pageSize |
 | 商品详情 | `GET /goods/{id}` | 商品信息、卖家基础信息、是否可购买 |
 | 发布/修改 | `POST /goods`、`PUT /goods/{id}` | 发布者修改后重新进入待审核，见下方请求示例 |
 | 我的商品 | `GET /users/me/goods` | 分页，可按 status 筛选 |
@@ -79,7 +79,7 @@
 | 审核 | `POST /admin/goods/{id}/review` | decision 建议 PASS/REJECT；驳回附 rejectReason |
 | 审核前修改商品 | `PUT /admin/goods/{id}` | 管理员仅可修改待审核商品，修改后再执行审核 |
 | 分类维护 | `POST /admin/categories`、`PUT /admin/categories/{id}`、`DELETE /admin/categories/{id}` | 分类有商品时删除可能被拒绝 |
-| 创建订单 | `POST /orders` | 仅 goodsId |
+| 创建订单 | `POST /orders` | goodsId，可选 shippingAddress（最长255字符） |
 | 订单列表/详情 | `GET /orders?side=buy`、`GET /orders?side=sell`、`GET /orders/{id}` | 列表分页；仅本人参与的订单 |
 | 模拟支付 | `POST /orders/{id}/mock-pay` | 买家操作，页面标明模拟支付 |
 | 交付/完成/取消 | `POST /orders/{id}/deliver`、`POST /orders/{id}/complete`、`POST /orders/{id}/cancel` | 建议分别由卖家交付、买家确认、买家取消未支付订单 |
@@ -95,7 +95,7 @@
 
 ```json
 {
-  "categoryId": "分类ID",
+  "cateId": "分类ID",
   "title": "数据库教材",
   "sellPrice": "12.34",
   "originalPrice": "45.00",
@@ -105,7 +105,7 @@
 }
 ```
 
-商品响应建议包含 goodsId、上述商品信息、publishTime、goodsStatus、purchasable；详情附卖家公开昵称和头像，个人手机号不默认公开。发布时 categoryId、title、sellPrice、tradeType、goodsDesc 必填，originalPrice 和 qualityLevel 可选。金额最多两位小数；tradeType 沿用 1邮寄、2自提、3两者，当前不提供物流追踪。
+商品响应建议包含 goodsId、上述商品信息、publishTime、goodsStatus、purchasable；详情附卖家公开昵称和头像，个人手机号不默认公开。发布时 cateId、title、sellPrice、tradeType、goodsDesc 必填，originalPrice 和 qualityLevel 可选。金额最多两位小数；tradeType 沿用 1邮寄、2自提、3两者，当前不提供物流追踪。
 
 已提供 POST /api/uploads/images（multipart 字段 file，JPEG/PNG、5 MB），返回 data.url/width/height；GET /api/media/{filename} 公开访问。此地址适用于公开商品图和头像，不用于私密凭证。商品发布和编辑支持 images 地址数组，最多4张；响应返回 images 和 coverUrl。编辑时省略或 null 保留图片，空数组清空图片，第一张为封面。
 
@@ -117,4 +117,6 @@
 
 重复点击建议临时禁用提交按钮；收到状态冲突后重新加载详情。私信第一版建议按需刷新或简单轮询，无需 WebSocket。
 
-资料 PATCH 中省略或 null 表示保留原值，空字符串可清空头像 URL、简介和收货地址。address 最长255字符，仅用于当前用户资料；公开卖家资料不返回收货地址，订单暂未保存地址快照。商品列表、订单列表、评价和消息采用时间与 ID 倒序分页；举报当前按 ID 排序。业务状态冲突返回 STATE_CONFLICT（409），数据库约束冲突返回 DATA_CONFLICT（409），锁冲突返回 RETRY_REQUIRED（409）。
+资料 PATCH 中省略或 null 表示保留原值，空字符串可清空头像 URL、简介和收货地址。address 最长255字符，仅用于当前用户资料；公开卖家资料不返回收货地址，订单 shippingAddress 保存本次下单提交的地址快照，后续修改个人资料不影响旧订单。商品列表、订单列表、评价和消息采用时间与 ID 倒序分页；举报按时间与 ID 倒序分页。业务状态冲突返回 STATE_CONFLICT（409），数据库约束冲突返回 DATA_CONFLICT（409），锁冲突返回 RETRY_REQUIRED（409）。
+
+订单地址约定：POST /api/orders 的 shippingAddress 保存到 orders.shipping_address；省略、null 或空白表示未提供地址。前端可将用户选定的个人地址填入该字段，后端不自动读取或修改个人资料。订单列表、详情、管理员订单和交易动作响应均返回快照；当前不提供下单后修改地址的接口。

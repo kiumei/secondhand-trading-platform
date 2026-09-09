@@ -43,6 +43,7 @@
       <arg column="pay_time" javaType="java.time.LocalDateTime"/>
       <arg column="finish_time" javaType="java.time.LocalDateTime"/>
       <arg column="create_time" javaType="java.time.LocalDateTime"/>
+      <arg column="shipping_address" javaType="java.lang.String"/>
     </constructor>
   </resultMap>
   <resultMap id="evaluation" type="com.campus.secondhand.market.MarketModels$Evaluation">
@@ -89,6 +90,7 @@
   </resultMap>
 
   <!-- 分类管理（两级）；删除由外键兜底防止并发新增商品造成孤立引用。 -->
+  <select id="lockCategories" resultType="string">SELECT cate_id FROM category ORDER BY cate_id FOR UPDATE</select>
   <select id="category" resultMap="category">SELECT cate_id,cate_name,parent_id,sort FROM category WHERE cate_id=#{id}</select>
   <insert id="insertCategory">INSERT INTO category(cate_name,parent_id,sort) VALUES(#{body.cateName},#{body.parentId},#{body.sort})</insert>
   <update id="updateCategory">UPDATE category SET cate_name=#{body.cateName},parent_id=#{body.parentId},sort=#{body.sort} WHERE cate_id=#{id}</update>
@@ -109,7 +111,7 @@
       (g.goods_status=1 AND NOT EXISTS(
         SELECT 1 FROM orders o WHERE o.goods_id=g.goods_id AND o.order_status IN(0,1,2,3,5)
       )) AS purchasable
-    FROM goods g JOIN sys_user u ON u.user_id=g.user_id JOIN category c ON c.cate_id=g.cate_id
+    FROM goods g JOIN sys_user u ON u.user_id=g.user_id LEFT JOIN category c ON c.cate_id=g.cate_id
   </sql>
   <select id="goods" resultMap="goods"><include refid="goodsDetail"/> WHERE g.goods_id=#{id}</select>
   <!-- 只锁商品自身，不通过 JOIN 额外锁定分类或卖家。锁后查订单使用当前读。 -->
@@ -164,13 +166,13 @@
   <delete id="deleteImages">DELETE FROM goods_image WHERE goods_id=#{goodsId}</delete>
 
   <!-- 订单：order_id 为 varchar(32) 手工流水号；有效订单指未取消且未售后的在途订单。 -->
-  <sql id="orderColumns">order_id,buyer_id,seller_id,goods_id,order_price,pay_status,order_status,pay_time,finish_time,create_time</sql>
+  <sql id="orderColumns">order_id,buyer_id,seller_id,goods_id,order_price,pay_status,order_status,pay_time,finish_time,create_time,shipping_address</sql>
   <select id="activeOrderIds" resultType="string">
     SELECT order_id FROM orders WHERE goods_id=#{goodsId} AND order_status IN(0,1,2,3,5) FOR UPDATE
   </select>
   <insert id="insertOrder">
-    INSERT INTO orders(order_id,seller_id,goods_id,buyer_id,order_price,pay_status,order_status,create_time)
-    VALUES(#{orderId},#{sellerId},#{goodsId},#{buyerId},#{orderPrice},0,0,#{createTime})
+    INSERT INTO orders(order_id,seller_id,goods_id,buyer_id,order_price,pay_status,order_status,create_time,shipping_address)
+    VALUES(#{orderId},#{sellerId},#{goodsId},#{buyerId},#{orderPrice},0,0,#{createTime},#{shippingAddress})
   </insert>
   <select id="order" resultMap="order">SELECT <include refid="orderColumns"/> FROM orders WHERE order_id=#{id}</select>
   <select id="lockOrder" resultMap="order">SELECT <include refid="orderColumns"/> FROM orders WHERE order_id=#{id} FOR UPDATE</select>
@@ -256,7 +258,7 @@
   </select>
   <select id="messageCount" resultType="long">SELECT COUNT(*) FROM message <include refid="messageWhere"/></select>
 
-  <!-- 举报：report 无商品外键；result 为处理结果；report_time 必填。 -->
+  <!-- 举报：report.goods_id 关联商品；result 为处理结果；report_time 必填。 -->
   <sql id="reportColumns">report_id,user_id AS report_user_id,goods_id,report_type,report_content,proof_img,handle_status,result AS handle_result,report_time</sql>
   <insert id="insertReport">
     INSERT INTO report(user_id,goods_id,report_type,report_content,proof_img,handle_status,result,report_time)
@@ -284,7 +286,7 @@
         ORDER BY gi.sort_order ASC,gi.img_id ASC LIMIT 1) AS cover_url,
       FALSE AS purchasable
     FROM favorite f JOIN goods g ON g.goods_id=f.goods_id
-      JOIN sys_user u ON u.user_id=g.user_id JOIN category c ON c.cate_id=g.cate_id
+      JOIN sys_user u ON u.user_id=g.user_id LEFT JOIN category c ON c.cate_id=g.cate_id
   </sql>
   <select id="favoriteGoods" resultMap="goods"><include refid="favoriteDetail"/> WHERE f.user_id=#{userId}
     ORDER BY f.create_time DESC,f.favorite_id DESC LIMIT #{size} OFFSET #{offset}
