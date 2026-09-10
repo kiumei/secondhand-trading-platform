@@ -206,15 +206,10 @@ a {
   transform: translateY(-2px);
 }
 
-/* 价格 */
+/* 价格（¥ 由各模板自行书写，避免与伪元素重复显示） */
 .price {
   color: var(--color-price);
   font-weight: 600;
-}
-.price::before {
-  content: '¥';
-  font-size: 0.75em;
-  margin-right: 1px;
 }
 
 /* 文本截断 */
